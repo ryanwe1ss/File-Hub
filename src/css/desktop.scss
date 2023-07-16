@@ -1,0 +1,37 @@
+.container {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  padding: 10px;
+}
+
+.dropzone {
+  border: 5px solid black;
+  border-radius: 20px;
+  width: 500px;
+  padding: 10px;
+}
+
+.progress {
+  border-radius: 5px;
+  height: 20px;
+  width: 99%;
+}
+
+.upload {
+  float: left;
+}
+
+.actions {
+  float: right;
+
+  input[type="button"] {
+    display: flex;
+    width: 100px;
+    height: 30px;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+  }
+}
