@@ -1,6 +1,8 @@
 require('dotenv').config({ path: '../.env' });
 
+const formidable = require('formidable');
 const express = require('express');
+const sharp = require('sharp');
 const cors = require('cors');
 const zip = require('adm-zip');
 const fs = require('fs');
@@ -53,6 +55,40 @@ route.post('/download', (request, result) => {
     zipFile.writeZip('files.zip');
     result.download('files.zip');
   }
+
+  setTimeout(() => {
+    if (fs.existsSync('files.zip')) {
+      fs.unlinkSync('files.zip');
+    }
+  }, 1000);
+});
+
+route.post('/upload', (request, result) => {
+  const form = new formidable.IncomingForm();
+  const files = [];
+
+  form.on('file', (field, file) => {
+    files.push([field, file]);
+  });
+  form.on('end', () => {
+    files.forEach(file => {
+      fs.rename(
+        file[1].filepath,
+        `files/${file[1].originalFilename}`,
+        (error) => null
+      );
+    });
+
+    files.forEach(thumbnail => {
+      sharp(`files/${thumbnail[1].originalFilename}`)
+        .resize(100, 100)
+        .toFile(`thumbnails/${thumbnail[1].originalFilename}`,
+        (error) => null
+      );
+    });
+    result.sendStatus(200);
+  });
+  form.parse(request);
 });
 
 route.delete('/delete', (request, result) => {

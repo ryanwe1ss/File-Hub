@@ -9,6 +9,24 @@ function App()
     FetchFiles();
   }, []);
 
+  const DragHover = () => {
+    const dropzone = document.querySelector(".dropzone");
+
+    ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
+        dropzone.addEventListener(evtName, (e) => e.preventDefault());
+    });
+
+    ["dragenter", "dragover"].forEach(evtName => {
+        dropzone.addEventListener(evtName, () => dropzone.classList.add("zoneborder"));
+    });
+
+    ["dragleave", "drop"].forEach(evtName => {
+        dropzone.addEventListener(evtName, () => dropzone.classList.remove("zoneborder"));
+    });
+
+    dropzone.addEventListener("drop", UploadFiles);
+  }
+
   function FetchFiles() {
     fetch(`${server}/files`, {
       method: 'GET',
@@ -16,10 +34,26 @@ function App()
     })
     .then(response => response.json())
     .then(files => {
-
-      if (files.length == 0) return document.getElementById('no-data').style.display = 'block';
+      document.getElementById('no-data').style.display = files.length == 0 ? 'block' : 'none';
+      document.querySelector('.spinner').style.display = files.length == 0 ? 'none' : 'block';
       setFiles(files);
     });
+  }
+
+  function UploadFiles(event) {
+    const request = new XMLHttpRequest();
+    const form = new FormData();
+    let files = event.type == 'drop' ? event.dataTransfer.files : event.target.files;
+
+    for (let i = 0; i < files.length; i++) {
+      form.append('files', files[i]);
+    }
+
+    fetch(`${server}/upload`, {
+      method: 'POST',
+      body: form,
+    })
+    .then(() => setTimeout(() => FetchFiles(), 100));
   }
 
   function DownloadFiles() {
@@ -98,7 +132,7 @@ function App()
     <div className='page'>
       <header>
         <div className='float-left'>
-          <div className='dropzone'>
+          <div className='dropzone' onDragOver={DragHover}>
               <div className='mb-3'>
                   <p className='text-blue-700 mb-1'>Upload multiple files with the file dialog or by dragging and dropping them within the bordered region</p>
                   <input type='file' id='upload' multiple accept='image/*'/>
@@ -125,7 +159,11 @@ function App()
       <hr className="bg-blue-500 h-1 mb-2"/>
       <div className='body'>
         <input type='text' id='search' placeholder='Search...' className='border border-blue-500 rounded w-1/3 py-2 px-3 leading-tight focus:outline-none'/>
-        <button onClick={FetchFiles}><i className='bi bi-arrow-clockwise ml-3 text-2xl'></i></button>
+        <button onClick={() => {
+          setFiles([]);
+          FetchFiles();
+
+        }}><i className='bi bi-arrow-clockwise ml-3 text-2xl'></i></button>
         <br/><br/>
 
         <table className="w-full table-auto divide-y divide-gray-200 border-b">
@@ -161,6 +199,7 @@ function App()
           </tbody>
         </table>
 
+        {files.length == 0 ? <div className="spinner"></div> : null}
         <center className="text-2xl mt-6 hidden" id="no-data">No Files Available</center>
       </div>
     </div>
