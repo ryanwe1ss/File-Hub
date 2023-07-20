@@ -1,2 +1,9 @@
+# IGNORE
 /node_modules
 /build
+/server/files/*
+/server/thumbnails/*
+
+# TRACK
+!/server/files/beach.jpg
+!/server/thumbnails/beach.jpg
