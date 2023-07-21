@@ -3,11 +3,9 @@ import { useEffect, useState } from "react";
 
 function App()
 {
+  const [count, setCount] = useState(0);
   const [files, setFiles] = useState([]);
-
-  useEffect(() => {
-    FetchFiles();
-  }, []);
+  useEffect(() => FetchFiles(), []);
 
   const DragHover = () => {
     const dropzone = document.querySelector(".dropzone");
@@ -27,23 +25,27 @@ function App()
     dropzone.addEventListener("drop", UploadFiles);
   }
 
-  function FetchFiles() {
-    fetch(`${server}/files`, {
+  function FetchFiles(limit=10) {
+    const searchQuery = document.getElementById('search').value;
+    document.querySelector('.spinner').style.display = 'block';
+
+    fetch(`${server}/files?name=${searchQuery}&limit=${limit}`, {
       method: 'GET',
       headers: {'Content-Type': 'application/json'},
     })
     .then(response => response.json())
-    .then(files => {
-      document.getElementById('no-data').style.display = files.length == 0 ? 'block' : 'none';
-      document.querySelector('.spinner').style.display = files.length == 0 ? 'none' : 'block';
-      setFiles(files);
+    .then(result => {
+      document.getElementById('no-data').style.display = result.files.length == 0 ? 'block' : 'none';
+      document.querySelector('.spinner').style.display = 'none';
+
+      setCount(result.count);
+      setFiles(result.files);
     });
   }
 
   function UploadFiles(event) {
-    const request = new XMLHttpRequest();
     const form = new FormData();
-    let files = event.type == 'drop' ? event.dataTransfer.files : event.target.files;
+    const files = event.type == 'drop' ? event.dataTransfer.files : event.target.files;
 
     for (let i = 0; i < files.length; i++) {
       form.append('files', files[i]);
@@ -135,7 +137,7 @@ function App()
           <div className='dropzone' onDragOver={DragHover}>
               <div className='mb-3'>
                   <p className='text-blue-700 mb-1'>Upload multiple files with the file dialog or by dragging and dropping them within the bordered region</p>
-                  <input type='file' id='upload' multiple accept='image/*'/>
+                  <input type='file' id='upload' multiple accept='image/*' onChange={UploadFiles} />
               </div>
 
               <div className='progress'>
@@ -158,12 +160,24 @@ function App()
 
       <hr className="bg-blue-500 h-1 mb-2"/>
       <div className='body'>
-        <input type='text' id='search' placeholder='Search...' className='border border-blue-500 rounded w-1/3 py-2 px-3 leading-tight focus:outline-none'/>
+        <input type='text' id='search' placeholder='Search...' onKeyUp={FetchFiles} className='border border-blue-500 rounded w-1/3 py-2 px-3 leading-tight focus:outline-none'/>
         <button onClick={() => {
           setFiles([]);
           FetchFiles();
 
         }}><i className='bi bi-arrow-clockwise ml-3 text-2xl'></i></button>
+
+        <select
+          id="limit"
+          onChange={() => FetchFiles(document.getElementById('limit').value)}
+          className='border border-blue-500 float-right rounded w-1/6 py-2 px-3 leading-tight focus:outline-none ml-3'
+        >
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value={count}>All: {count}</option>
+        </select>
         <br/><br/>
 
         <table className="w-full table-auto divide-y divide-gray-200 border-b">
@@ -174,14 +188,14 @@ function App()
               </th>
               <th></th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Size</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Created</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
             </tr>
           </thead>
           <tbody>
             {files.map(file => (
-              <tr className="bg-gray-50" key={file.size}>
+              <tr className="bg-gray-50" key={file.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <input type="checkbox" className="h-5 w-5 text-blue-600"/>
                 </td>
@@ -192,14 +206,14 @@ function App()
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{file.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase tracking-wider">{file.type}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{file.size}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(file.size / 1048576).toFixed(2)} MB</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(file.date).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {files.length == 0 ? <div className="spinner"></div> : null}
+        <div className="spinner"></div>
         <center className="text-2xl mt-6 hidden" id="no-data">No Files Available</center>
       </div>
     </div>

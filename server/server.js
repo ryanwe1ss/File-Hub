@@ -12,10 +12,18 @@ route.use(cors());
 route.use(express.json());
 
 route.get('/files', (request, result) => {
+  const searchQuery = request.query.name;
+  const limit = request.query.limit;
+
   const localFiles = [];
+  let fileId = 1;
 
   fs.readdir('files', (error, files) => {
+    const count = files.length;
+
     files.forEach(file => {
+      if (searchQuery && !file.includes(searchQuery) || limit == fileId - 1) return;
+
       const fileExtension = file.split('.').pop();
       const fileSize = fs.statSync(`files/${file}`).size;
       const fileDate = fs.statSync(`files/${file}`).mtime;
@@ -28,15 +36,18 @@ route.get('/files', (request, result) => {
       }
 
       localFiles.push({
+        id: fileId,
         name: file,
         thumbnail: fileThumbnail,
         type: fileExtension,
         size: fileSize,
         date: fileDate,
       });
+
+      fileId++;
     });
 
-    result.send(localFiles);
+    result.send({ files: localFiles, count: count });
   });
 });
 
