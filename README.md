@@ -1,2 +1,4 @@
 # File-Hub
-File Server that allows you to upload your own files and download existing ones on the server
+File Hub allows you to upload your own files and download existing ones that are stored directly on the server
+
+![](demo/app.png)

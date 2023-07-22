@@ -30,7 +30,7 @@ function App()
 
   function FetchFiles() {
     const searchQuery = document.getElementById('search').value;
-    const limit = document.getElementById('limit').value || 10;
+    const limit = document.getElementById('limit').value;
 
     const previousTbody = document.querySelector('tbody');
     const tempTbody = document.createElement('tbody');
@@ -52,7 +52,8 @@ function App()
     })
     .then(response => response.json())
     .then(result => {
-      tempTbody.parentNode.replaceChild(previousTbody, tempTbody);
+      if (tempTbody.parentNode) tempTbody.parentNode.replaceChild(previousTbody, tempTbody);
+      else location.reload();
 
       setCount(searchQuery ? result.files.length : result.count);
       setFiles(result.files);
@@ -191,8 +192,8 @@ function App()
           <button onClick={FetchFiles}><i className='bi bi-arrow-clockwise ml-3 text-2xl'></i></button>
 
           <div className="float-right">
-            <button onClick={DownloadFiles} className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 w-40 rounded mr-2'><i className="bi bi-upload float-left"></i>Download</button>
-            <button onClick={DeleteFiles} className='bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 w-40 rounded mr-7'><i className="bi bi-trash float-left"></i>Delete</button>
+            <button onClick={DownloadFiles} className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2'><i className="bi bi-upload"></i></button>
+            <button onClick={DeleteFiles} className='bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-3'><i className="bi bi-trash"></i></button>
           </div>
         </div>
 
