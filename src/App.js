@@ -169,7 +169,7 @@ function App()
     <div className='page'>
 
       <div className="w-full">
-        <div className="mb-4 whitespace-nowrap">
+        <div className="mb-4">
           <input type='text' id='search' placeholder='Search...' onKeyUp={() => {
             clearTimeout(debounceDelay);
             debounceDelay = setTimeout(FetchFiles, 300);
