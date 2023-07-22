@@ -22,7 +22,7 @@
 
 table {
   margin-right: 15px;
-  min-width: 750px;
+  min-width: 725px;
   width: 98%;
 }
 
@@ -35,12 +35,12 @@ input[type='checkbox'] {
 }
 
 .spinner {
-  min-height: 100px;
-  min-width: 100px;
-  max-height: 100px;
-  max-width: 100px;
+  min-height: 80px;
+  min-width: 80px;
+  max-height: 80px;
+  max-width: 80px;
 
-  margin: 5% auto;
+  margin: 3% auto;
   animation: spin 2s linear infinite;
   border: 12px solid #f3f3f3;
   border-top: 12px solid #3498db;

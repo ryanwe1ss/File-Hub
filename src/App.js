@@ -8,10 +8,9 @@ function App()
   const [count, setCount] = useState(0);
   const [files, setFiles] = useState([]);
   const [itemsSelected, setItemsSelected] = useState(0);
-
   let debounceDelay = null;
 
-  const DragHover = () => {
+  const FileDrop = () => {
     const dropzone = document.querySelector(".dropzone");
 
     ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
@@ -29,29 +28,31 @@ function App()
     dropzone.addEventListener("drop", UploadFiles);
   }
 
-  function FetchFiles(limit=10) {
-    setFiles([]);
-
+  function FetchFiles() {
     const searchQuery = document.getElementById('search').value;
+    const limit = document.getElementById('limit').value || 10;
 
+    const previousTbody = document.querySelector('tbody');
+    const tempTbody = document.createElement('tbody');
+    const loadingRow = document.createElement('tr');
+
+    loadingRow.innerHTML = (`
+      <td colspan="6">
+        <div class="spinner"></div>
+      </td>
+    `);
+    
+    tempTbody.appendChild(loadingRow);
+    previousTbody.parentNode.replaceChild(tempTbody, previousTbody);
+
+    // Fetch Files
     fetch(`${server}/api/files?name=${searchQuery}&limit=${limit}`, {
       method: 'GET',
       headers: {'Content-Type': 'application/json'},
     })
     .then(response => response.json())
     .then(result => {
-      const spinner = document.querySelector('.spinner');
-      const noDataLabel = document.getElementById('no-data');
-
-      if (spinner && noDataLabel) {
-        if (result.count == 0) {
-          document.getElementById('no-data').classList.remove('hidden');
-          document.querySelector('.spinner').classList.add('hidden');
-        } else {
-          document.getElementById('no-data').classList.remove('hidden');
-          document.querySelector('.spinner').classList.add('hidden');
-        }
-      }
+      tempTbody.parentNode.replaceChild(previousTbody, tempTbody);
 
       setCount(searchQuery ? result.files.length : result.count);
       setFiles(result.files);
@@ -225,11 +226,8 @@ function App()
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(file.date).toLocaleString()}</td>
               </tr>
             )) : (
-              <tr>
-                <td colSpan="6">
-                  <div className="spinner"></div>
-                  <center className="text-2xl mt-6 hidden" id="no-data">No Files Available</center>
-                </td>
+              <tr className="bg-gray-50">
+                <td className="text-1xl text-center px-6 py-4 text-gray-500" colSpan="6">No Files Found</td>
               </tr>
             )}
           </tbody>
@@ -237,103 +235,25 @@ function App()
       </div>
 
       <div className="flex flex-col">
-        <div className='dropzone w-1/6 flex flex-col justify-center ml-3' onDragOver={DragHover}>
+        <div className='dropzone w-1/6 flex flex-col justify-center cursor-pointer ml-3' onClick={() => document.getElementById('fileInput').click()} onDragOver={FileDrop}>
           <div className='text-center mb-4 text-gray-600'>Drop Files Here</div>
-
+          
           <div className='flex items-center justify-center'>
             <div className='bi bi-cloud-upload text-6xl'></div>
           </div>
+
+          <input
+            type='file'
+            id='fileInput'
+            onChange={UploadFiles}
+            className='hidden'
+          />
         </div>
         
         <div className='flex flex-col items-center mt-2'>
           <button disabled={true} className='bg-orange-500 text-white py-1 px-2 rounded'>{itemsSelected} Items Selected</button>
         </div>
       </div>
-
-
-
-
-
-
-
-
-
-
-
-      
-      
-      {/* <div className='flex flex-col items-center justify-center float-right'>
-        <div className='dropzone flex flex-col items-center justify-center' onDragOver={DragHover}>
-          <div className='text-center mb-4 text-gray-600'>Drop Files Here</div>
-
-          <div className='flex items-center justify-center'>
-            <div className='bi bi-cloud-upload text-6xl'></div>
-          </div>
-        </div>
-      </div>
-
-      <div className="">
-        <input type='text' id='search' placeholder='Search...' onKeyUp={() => {
-          clearTimeout(debounceDelay);
-          debounceDelay = setTimeout(FetchFiles, 300);
-
-        }} className='border border-blue-500 rounded w-1/2 py-2 px-3 leading-tight focus:outline-none'/>
-        <select
-          id="limit"
-          onChange={() => FetchFiles(document.getElementById('limit').value)}
-          className='border border-blue-500 rounded w-1/6 py-2 px-3 leading-tight focus:outline-none ml-3'
-        >
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-          <option value={count}>All: {count}</option>
-        </select>
-        <button onClick={() => {
-          setFiles([]);
-          FetchFiles();
-
-        }}><i className='bi bi-arrow-clockwise ml-3 text-2xl'></i></button>
-        <br/><br/>
-
-        <table className="min-w-30em table-auto divide-y divide-gray-200 border-b">
-          <thead>
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">
-                <input type="checkbox" onChange={CheckAll} className="h-5 w-5 text-blue-600" id="checkbox-all"/>
-              </th>
-              <th></th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {files.map(file => (
-              <tr className="bg-gray-50" key={file.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <input type="checkbox" className="h-5 w-5 text-blue-600"/>
-                </td>
-                <td className="whitespace-nowrap text-sm text-gray-500">
-                  {file.thumbnail ? <img src={file.thumbnail} alt={file.name} className="w-8 h-8 rounded-md"/>
-                    : <i className="bi bi-file-earmark-text text-3xl"></i>
-                  }
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{file.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase tracking-wider">{file.type}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(file.size / 1048576).toFixed(2)} MB</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(file.date).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="w-2/3">
-          <div className="spinner"></div>
-          <center className="text-2xl mt-6 hidden" id="no-data">No Files Available</center>
-        </div>
-      </div> */}
     </div>
   );
 }
