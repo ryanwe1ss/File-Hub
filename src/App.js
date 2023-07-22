@@ -1,11 +1,12 @@
-const server = `http://${window.location.hostname}${process.env.USE_PORT_IN_URL === 'true' ? `:${process.env.SERVER_PORT}` : ''}`;
+const server = `https://${window.location.hostname}${process.env.USE_PORT_IN_URL === 'true' ? `:${process.env.SERVER_PORT}` : ''}`;
 import { useEffect, useState } from "react";
 
 function App()
 {
+  useEffect(() => FetchFiles(), []);
+
   const [count, setCount] = useState(0);
   const [files, setFiles] = useState([]);
-  useEffect(() => FetchFiles(), []);
 
   const DragHover = () => {
     const dropzone = document.querySelector(".dropzone");
@@ -29,7 +30,7 @@ function App()
     const searchQuery = document.getElementById('search').value;
     document.querySelector('.spinner').style.display = 'block';
 
-    fetch(`${server}/files?name=${searchQuery}&limit=${limit}`, {
+    fetch(`${server}/api/files?name=${searchQuery}&limit=${limit}`, {
       method: 'GET',
       headers: {'Content-Type': 'application/json'},
     })
@@ -51,7 +52,7 @@ function App()
       form.append('files', files[i]);
     }
 
-    fetch(`${server}/upload`, {
+    fetch(`${server}/api/upload`, {
       method: 'POST',
       body: form,
     })
@@ -62,14 +63,14 @@ function App()
     const files = [];
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
 
-    for (let i = 1; i < checkboxes.length; i++) {
-      if (checkboxes[i].checked) {
-        files.push({ name: checkboxes[i].parentNode.parentNode.childNodes[2].innerHTML });
+    for (let file = 1; file < checkboxes.length; file++) {
+      if (checkboxes[file].checked) {
+        files.push({ name: checkboxes[file].parentNode.parentNode.childNodes[2].innerHTML });
       }
     
     } if (files.length == 0) return;
 
-    fetch(`${server}/download`, {
+    fetch(`${server}/api/download`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(files),
@@ -106,7 +107,7 @@ function App()
     
     } if (files.length == 0) return;
 
-    fetch(`${server}/delete`, {
+    fetch(`${server}/api/delete`, {
       method: 'DELETE',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(files),

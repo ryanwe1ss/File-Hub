@@ -11,7 +11,7 @@ const route = express();
 route.use(cors());
 route.use(express.json());
 
-route.get('/files', (request, result) => {
+route.get('/api/files', (request, result) => {
   const searchQuery = request.query.name;
   const limit = request.query.limit;
 
@@ -51,7 +51,7 @@ route.get('/files', (request, result) => {
   });
 });
 
-route.post('/download', (request, result) => {
+route.post('/api/download', (request, result) => {
   const files = request.body;
   const zipFile = new zip();
 
@@ -74,7 +74,7 @@ route.post('/download', (request, result) => {
   }, 1000);
 });
 
-route.post('/upload', (request, result) => {
+route.post('/api/upload', (request, result) => {
   const form = new formidable.IncomingForm();
   const files = [];
 
@@ -102,7 +102,7 @@ route.post('/upload', (request, result) => {
   form.parse(request);
 });
 
-route.delete('/delete', (request, result) => {
+route.delete('/api/delete', (request, result) => {
   const files = request.body;
 
   files.forEach(file => {
