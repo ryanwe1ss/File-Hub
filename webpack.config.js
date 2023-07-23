@@ -7,7 +7,7 @@ module.exports = {
   mode: 'development',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js',
+    filename: '[name].[contenthash].js',
     publicPath: '/',
   },
   module: {
@@ -52,6 +52,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './public/index.html',
       filename: 'index.html',
+      title: 'Caching',
     }),
   ],
   resolve: {

@@ -13,7 +13,24 @@ route.use(range({ accept: 'bytes' }));
 route.use(express.json());
 route.use(cors());
 
-route.get('/api/files', (request, result) => {
+const middleware = (request, result, next) => {
+  if (request.headers.authorization != process.env.PASSWORD) {
+    return result.sendStatus(401);
+  
+  } next();
+};
+
+route.get('/api/authenticate', (request, result) => {
+  const token = request.query.token;
+
+  if (token != process.env.PASSWORD) {
+    return result.sendStatus(401);
+  }
+
+  result.sendStatus(200);
+});
+
+route.get('/api/files', middleware, (request, result) => {
   const searchQuery = request.query.name;
   const limit = request.query.limit;
 
@@ -59,36 +76,24 @@ route.post('/api/download', (request, result) => {
 
   if (files.length == 1) {
     result.download(`files/${files[0].name}`);
-
+  
   } else {
-    const fileSize = fs.statSync('files.zip').size;
-    const stream = fs.createReadStream('files.zip', { highWaterMark: 64 * 1024 });
-
     files.forEach(file => {
       zipFile.addLocalFile(`files/${file.name}`);
-    
-    }); zipFile.writeZip('files.zip');
-
-    result.setHeader('Content-Length', fileSize);
-    result.range({
-      first: 0,
-      last: fileSize - 1,
-      length: fileSize,
     });
-
-    stream.on('data', (chunk) => {
-      result.write(chunk);
-    });
-    
-    stream.on('end', () => {
-      result.end();
-      fs.unlinkSync('files.zip');
-    });
+  
+    zipFile.writeZip('files.zip');
+    result.download('files.zip');
   }
+
+  setTimeout(() => {
+    if (fs.existsSync('files.zip')) {
+      fs.unlinkSync('files.zip');
+    }
+  }, 1000);
 });
 
-route.post('/api/upload', (request, result) => {
-  
+route.post('/api/upload', middleware, (request, result) => {
   const form = new formidable.IncomingForm({
     maxFileSize: Infinity,
     maxFieldsSize: Infinity,
@@ -129,7 +134,7 @@ route.post('/api/upload', (request, result) => {
   form.parse(request);
 });
 
-route.delete('/api/delete', (request, result) => {
+route.delete('/api/delete', middleware, (request, result) => {
   const files = request.body;
 
   files.forEach(file => {
@@ -142,6 +147,6 @@ route.delete('/api/delete', (request, result) => {
   result.sendStatus(200);
 });
 
-route.listen(process.env.SERVER_PORT, () => {
-  console.log(`Server listening on port ${process.env.SERVER_PORT}`);
+route.listen(process.env.PORT, () => {
+  console.log(`Server listening on port ${process.env.PORT}`);
 });

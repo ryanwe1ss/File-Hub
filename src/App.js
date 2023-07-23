@@ -1,5 +1,7 @@
-const server = `http://${window.location.hostname}${process.env.USE_PORT_IN_URL === 'true' ? `:${process.env.SERVER_PORT}` : ''}`;
+const server = `${process.env.PROTOCOL}://${window.location.hostname}${process.env.USE_PORT_IN_URL === 'true' ? `:${process.env.PORT}` : ''}`;
+
 import { useEffect, useState } from "react";
+import AuthenticationModal from "./components/auth-modal";
 
 function App()
 {
@@ -7,6 +9,7 @@ function App()
 
   const [count, setCount] = useState(0);
   const [files, setFiles] = useState([]);
+  const [authenticated, setAuthenticated] = useState(false);
   const [itemsSelected, setItemsSelected] = useState(0);
   let debounceDelay = null;
 
@@ -48,16 +51,27 @@ function App()
     // Fetch Files
     fetch(`${server}/api/files?name=${searchQuery}&limit=${limit}`, {
       method: 'GET',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token'),
+      },
     })
-    .then(response => response.json())
+    .then(response => {
+      if (response.status == 401) throw new Error();
+      return response.json();
+    })
     .then(result => {
-      if (tempTbody.parentNode) tempTbody.parentNode.replaceChild(previousTbody, tempTbody);
-      else location.reload();
-
       setCount(searchQuery ? result.files.length : result.count);
+      setAuthenticated(true);
       setFiles(result.files);
+    })
+    .catch(() => {
+      setFiles([]);
+      setAuthenticated(false);
+      document.getElementById('modal').classList.remove('hidden');
     });
+
+    if (tempTbody.parentNode) tempTbody.parentNode.replaceChild(previousTbody, tempTbody);
   }
 
   function UploadFiles(event) {
@@ -70,6 +84,7 @@ function App()
     }
 
     request.open('POST', `${server}/api/upload`);
+    request.setRequestHeader('Authorization', localStorage.getItem('token'));
 
     request.upload.addEventListener('progress', event => {
       const percent = Math.round((event.loaded / event.total) * 100);
@@ -100,6 +115,7 @@ function App()
 
     request.open('POST', `${server}/api/download`);
     request.setRequestHeader('Content-Type', 'application/json');
+    request.setRequestHeader('Authorization', localStorage.getItem('token'));
     request.responseType = 'blob';
 
     request.addEventListener('progress', (event) => {
@@ -145,7 +161,10 @@ function App()
 
     fetch(`${server}/api/delete`, {
       method: 'DELETE',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token'),
+      },
       body: JSON.stringify(files),
     })
     .then(response => {
@@ -177,9 +196,13 @@ function App()
 
   return (
     <div className='page'>
+      <AuthenticationModal
+        server={server}
+        FetchFiles={FetchFiles}
+      />
 
       <div className="w-full">
-        <div className="mb-4">
+        <div className="mb-4 flex">
           <input type='text' id='search' placeholder='Search...' onKeyUp={() => {
             clearTimeout(debounceDelay);
             debounceDelay = setTimeout(FetchFiles, 300);
@@ -198,15 +221,19 @@ function App()
             <option value={count}>All: {count}</option>
           </select>
 
-          <button onClick={FetchFiles}><i className='bi bi-arrow-clockwise ml-3 text-2xl'></i></button>
-          
-          <div className="flex float-right">
+          <div className="flex ml-auto">
+            {!authenticated ?
+              <button className="mr-3 ml-12"><i className="bi bi-lock-fill text-2xl text-red-500"></i></button> :
+              <button className="mr-3 ml-12"><i className="bi bi-unlock-fill text-2xl text-green-500"></i></button>
+            }
+
             <div className="download-bar mt-auto mr-3">
               <div className="download"></div>
             </div>
 
-            <button onClick={DownloadFiles} className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2'><i className="bi bi-upload"></i></button>
-            <button onClick={DeleteFiles} className='bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-3'><i className="bi bi-trash"></i></button>
+            <button onClick={FetchFiles} className='bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded mr-2' id='reload'><i className="bi bi-arrow-clockwise"></i></button>
+            <button onClick={DownloadFiles} className='bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2'><i className="bi bi-upload"></i></button>
+            <button onClick={DeleteFiles} className='bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded mr-3'><i className="bi bi-trash"></i></button>
           </div>
         </div>
 
