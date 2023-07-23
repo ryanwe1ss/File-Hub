@@ -62,26 +62,33 @@ function App()
 
   function UploadFiles(event) {
     const form = new FormData();
+    const request = new XMLHttpRequest();
     const files = event.type == 'drop' ? event.dataTransfer.files : event.target.files;
 
     for (let i = 0; i < files.length; i++) {
       form.append('files', files[i]);
     }
 
-    fetch(`${server}/api/upload`, {
-      method: 'POST',
-      body: form,
-    })
-    .then(() => {
-      setTimeout(() => FetchFiles(), 100);
+    request.open('POST', `${server}/api/upload`);
 
+    request.upload.addEventListener('progress', event => {
+      const percent = Math.round((event.loaded / event.total) * 100);
+      document.querySelector('.upload').style.width = `${percent}%`;
+    });
+
+    request.addEventListener('load', () => {
+      setTimeout(() => FetchFiles(), 100);
       setItemsSelected(0);
+
       document.getElementById('checkbox-all').checked = false;
     });
+
+    request.send(form);
   }
 
   function DownloadFiles() {
     const files = [];
+    const request = new XMLHttpRequest();
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
 
     for (let file = 1; file < checkboxes.length; file++) {
@@ -91,23 +98,23 @@ function App()
     
     } if (files.length == 0) return;
 
-    fetch(`${server}/api/download`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(files),
-    })
-    .then(response => {
-      if (response.status == 200) return response.blob();
-      else alert(`Problem Downloading File(s) - Error: [${response.status}]`);
-    })
-    .then(data => {
+    request.open('POST', `${server}/api/download`);
+    request.setRequestHeader('Content-Type', 'application/json');
+    request.responseType = 'blob';
+
+    request.addEventListener('progress', (event) => {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        document.querySelector('.download').style.width = `${percent}%`;
+    });
+    
+    request.addEventListener('load', () => {
       const instance = document.createElement('a');
-      instance.href = window.URL.createObjectURL(data);
+      instance.href = window.URL.createObjectURL(request.response);
 
       if (files.length == 1) {
         instance.download = files[0].name;
         instance.click();
-      
+
       } else {
         instance.download = 'files.zip';
         instance.click();
@@ -116,9 +123,13 @@ function App()
       document.getElementById('checkbox-all').checked = false;
       checkboxes.forEach(checkbox => {
         checkbox.checked = false;
-      
-      }); setItemsSelected(0);
+      });
+
+      document.querySelector('.download').style.width = '0%';
+      setItemsSelected(0);
     });
+
+    request.send(JSON.stringify(files));
   }
 
   function DeleteFiles() {
@@ -160,10 +171,8 @@ function App()
   }
 
   function CheckBox(event) {
-    if (event.target.checked) {
-      setItemsSelected(itemsSelected + 1);
-    
-    } else setItemsSelected(itemsSelected - 1);
+    if (event.target.checked) setItemsSelected(itemsSelected + 1);
+    else setItemsSelected(itemsSelected - 1);
   }
 
   return (
@@ -190,8 +199,12 @@ function App()
           </select>
 
           <button onClick={FetchFiles}><i className='bi bi-arrow-clockwise ml-3 text-2xl'></i></button>
+          
+          <div className="flex float-right">
+            <div className="download-bar mt-auto mr-3">
+              <div className="download"></div>
+            </div>
 
-          <div className="float-right">
             <button onClick={DownloadFiles} className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2'><i className="bi bi-upload"></i></button>
             <button onClick={DeleteFiles} className='bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-3'><i className="bi bi-trash"></i></button>
           </div>
@@ -240,7 +253,11 @@ function App()
           <div className='text-center mb-4 text-gray-600'>Drop Files Here</div>
           
           <div className='flex items-center justify-center'>
-            <div className='bi bi-cloud-upload text-6xl'></div>
+            <div className='bi bi-arrow-down-circle text-7xl'></div>
+          </div>
+
+          <div className="upload-bar mt-auto">
+            <div className="upload"></div>
           </div>
 
           <input

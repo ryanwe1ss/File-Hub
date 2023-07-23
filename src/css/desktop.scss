@@ -45,6 +45,34 @@ input[type='checkbox'] {
   border-radius: 50%;
 }
 
+.upload-bar {
+  width: 200px;
+  height: 20px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .upload {
+    background-color: #4caf50;
+    height: 100%;
+    width: 0%;
+  }
+}
+
+.download-bar {
+  width: 200px;
+  height: 40px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .download {
+    background-color: #4caf50;
+    height: 100%;
+    width: 0%;
+  }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(720deg); }

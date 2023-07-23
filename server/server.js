@@ -1,15 +1,17 @@
 require('dotenv').config({ path: '../.env' });
 
 const formidable = require('formidable');
+const range = require('express-range');
 const express = require('express');
 const sharp = require('sharp');
 const cors = require('cors');
 const zip = require('adm-zip');
 const fs = require('fs');
-const route = express();
 
-route.use(cors());
+const route = express();
+route.use(range({ accept: 'bytes' }));
 route.use(express.json());
+route.use(cors());
 
 route.get('/api/files', (request, result) => {
   const searchQuery = request.query.name;
@@ -57,48 +59,73 @@ route.post('/api/download', (request, result) => {
 
   if (files.length == 1) {
     result.download(`files/${files[0].name}`);
-  
+
   } else {
+    const fileSize = fs.statSync('files.zip').size;
+    const stream = fs.createReadStream('files.zip', { highWaterMark: 64 * 1024 });
+
     files.forEach(file => {
       zipFile.addLocalFile(`files/${file.name}`);
-    });
-  
-    zipFile.writeZip('files.zip');
-    result.download('files.zip');
-  }
+    
+    }); zipFile.writeZip('files.zip');
 
-  setTimeout(() => {
-    if (fs.existsSync('files.zip')) {
+    result.setHeader('Content-Length', fileSize);
+    result.range({
+      first: 0,
+      last: fileSize - 1,
+      length: fileSize,
+    });
+
+    stream.on('data', (chunk) => {
+      result.write(chunk);
+    });
+    
+    stream.on('end', () => {
+      result.end();
       fs.unlinkSync('files.zip');
-    }
-  }, 1000);
+    });
+  }
 });
 
 route.post('/api/upload', (request, result) => {
-  const form = new formidable.IncomingForm();
+  
+  const form = new formidable.IncomingForm({
+    maxFileSize: Infinity,
+    maxFieldsSize: Infinity,
+  });
   const files = [];
 
   form.on('file', (field, file) => {
     files.push([field, file]);
   });
-  form.on('end', () => {
-    files.forEach(file => {
-      fs.rename(
-        file[1].filepath,
-        `files/${file[1].originalFilename}`,
-        (error) => null
-      );
+  
+  form.on('end', async () => {
+    // Wait for all file writing tasks to complete
+    const fileWritingPromises = files.map((file) => {
+      return new Promise((resolve) => {
+        fs.rename(
+          file[1].filepath,
+          `files/${file[1].originalFilename}`,
+          (error) => resolve()
+        );
+      });
     });
-
-    files.forEach(thumbnail => {
-      sharp(`files/${thumbnail[1].originalFilename}`)
-        .resize(100, 100)
-        .toFile(`thumbnails/${thumbnail[1].originalFilename}`,
-        (error) => null
-      );
+    await Promise.all(fileWritingPromises);
+  
+    // Wait for all thumbnail generation tasks to complete
+    const thumbnailPromises = files.map((thumbnail) => {
+      return new Promise((resolve) => {
+        sharp(`files/${thumbnail[1].originalFilename}`)
+          .resize(100, 100)
+          .toFile(`thumbnails/${thumbnail[1].originalFilename}`, (error) => resolve());
+      });
     });
+    await Promise.all(thumbnailPromises);
+  
+    // Send the response once all tasks are completed
     result.sendStatus(200);
   });
+  
   form.parse(request);
 });
 
