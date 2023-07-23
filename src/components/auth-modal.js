@@ -47,8 +47,8 @@ function AuthenticationModal(args)
               <i className='bi bi-arrow-right'></i>
             </button>
 
-            <div className='ml-5 mt-2 hidden' id='message'>
-              <span className='text-red-500'>Incorrect password</span>
+            <div className='ml-6 mt-2 hidden' id='message'>
+              <span className='text-red-500 font-bold'>Incorrect password</span>
             </div>
           </div>
         </div>

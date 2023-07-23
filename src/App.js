@@ -61,17 +61,19 @@ function App()
       return response.json();
     })
     .then(result => {
+      if (tempTbody.parentNode) tempTbody.parentNode.replaceChild(previousTbody, tempTbody);
+
       setCount(searchQuery ? result.files.length : result.count);
       setAuthenticated(true);
       setFiles(result.files);
     })
     .catch(() => {
+      if (tempTbody.parentNode) tempTbody.parentNode.replaceChild(previousTbody, tempTbody);
+
       setFiles([]);
       setAuthenticated(false);
       document.getElementById('modal').classList.remove('hidden');
     });
-
-    if (tempTbody.parentNode) tempTbody.parentNode.replaceChild(previousTbody, tempTbody);
   }
 
   function UploadFiles(event) {
@@ -195,7 +197,7 @@ function App()
   }
 
   return (
-    <div className='page'>
+    <div className='page overflow-hidden'>
       <AuthenticationModal
         server={server}
         FetchFiles={FetchFiles}
@@ -289,7 +291,7 @@ function App()
       </div>
 
       <div className="flex flex-col">
-        <div className='dropzone w-1/6 flex flex-col justify-center cursor-pointer ml-3' onClick={() => document.getElementById('fileInput').click()} onDragOver={FileDrop}>
+        <div className='dropzone w-1/6 bg-gray-200 flex flex-col justify-center cursor-pointer ml-3' onClick={() => document.getElementById('fileInput').click()} onDragOver={FileDrop}>
           <div className='text-center mb-4 text-gray-600'>Drop Files Here</div>
           
           <div className='flex items-center justify-center'>
