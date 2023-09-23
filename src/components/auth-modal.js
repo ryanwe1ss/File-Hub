@@ -8,20 +8,23 @@ function AuthenticationModal(args)
 
     fetch(`${args.server}/api/authenticate?token=${password}`)
       .then(response => {
-        if (response.status != 200) return message.classList.remove('hidden');
+        if (response.status != 200) {
+          document.getElementById('password').value = null;
+          return message.classList.remove('hidden');
+        }
 
         localStorage.setItem('token', password);
         message.classList.add('hidden');
         
-        document.getElementById('modal').classList.add('hidden');
+        document.getElementById('auth-modal').classList.add('hidden');
         document.getElementById('reload').click();
       }
     );
   }
 
   return (
-    <div className="modal hidden" id="modal">
-      <div className="modal-content">
+    <div className="auth-modal hidden" id="auth-modal">
+      <div className="auth-modal-content">
         <header className='flex justify-between items-center'>
           <h4 className='font-bold'>Authentication Required</h4>
         </header>
