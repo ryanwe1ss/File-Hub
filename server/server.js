@@ -30,6 +30,13 @@ route.get('/api/authenticate', (request, result) => {
   result.sendStatus(200);
 });
 
+route.get('/api/file/:name', middleware, (request, result) => {
+  fs.readFile(`files/${request.params.name}`, (error, data) => {
+    if (error) return result.sendStatus(404);
+    result.send(data);
+  });
+});
+
 route.get('/api/files', middleware, (request, result) => {
   const searchQuery = request.query.name;
   const limit = request.query.limit;

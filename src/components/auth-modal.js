@@ -6,7 +6,7 @@ function AuthenticationModal(args)
     const password = document.getElementById('password').value;
     const message = document.getElementById('message');
 
-    fetch(`${args.server}/api/authenticate?token=${password}`)
+    fetch(`${args.ServerURL}/api/authenticate?token=${password}`)
       .then(response => {
         if (response.status != 200) {
           document.getElementById('password').value = null;

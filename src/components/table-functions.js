@@ -100,6 +100,12 @@ function TableFunctions(args)
         <option value={args.count}>All: {args.count}</option>
       </select>
 
+      {!args.filesLoaded ?
+        <div>
+          <div className="tiny-spinner"></div>
+        </div> : null
+      }
+
       <div className="flex ml-auto">
         {!args.authenticated ?
           <button className="mr-3 ml-12"><i className="bi bi-lock-fill text-2xl text-red-500"></i></button> :
