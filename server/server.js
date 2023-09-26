@@ -9,6 +9,8 @@ const zip = require('adm-zip');
 const fs = require('fs');
 
 const route = express();
+const imageTypes = ['jpg', 'jpeg', 'png', 'gif'];
+
 route.use(range({ accept: 'bytes' }));
 route.use(express.json());
 route.use(cors());
@@ -21,13 +23,7 @@ const middleware = (request, result, next) => {
 };
 
 route.get('/api/authenticate', (request, result) => {
-  const token = request.query.token;
-
-  if (token != process.env.PASSWORD) {
-    return result.sendStatus(401);
-  }
-
-  result.sendStatus(200);
+  result.sendStatus(request.query.token != process.env.PASSWORD ? 401 : 200);
 });
 
 route.get('/api/file/:name', middleware, (request, result) => {
@@ -40,40 +36,35 @@ route.get('/api/file/:name', middleware, (request, result) => {
 route.get('/api/files', middleware, (request, result) => {
   const searchQuery = request.query.name;
   const limit = request.query.limit;
-
   const localFiles = [];
   let fileId = 1;
 
   fs.readdir('files', (error, files) => {
-    const count = files.length;
-
     files.forEach(file => {
       if (searchQuery && !file.includes(searchQuery) || limit == fileId - 1) return;
 
-      const fileExtension = file.split('.').pop();
-      const fileSize = fs.statSync(`files/${file}`).size;
-      const fileDate = fs.statSync(`files/${file}`).mtime;
+      const extension = file.split('.').pop().toLowerCase();
+      const size = fs.statSync(`files/${file}`).size;
+      const date = fs.statSync(`files/${file}`).mtime;
+      let thumbnail = null;
 
-      let fileThumbnail = null;
-      if (fileExtension === 'jpg' || fileExtension === 'png') {
-        if (fs.existsSync(`thumbnails/${file}`)) {
-          fileThumbnail = `data:image/${fileExtension};base64,${fs.readFileSync(`thumbnails/${file}`, { encoding: 'base64' })}`;
-        }
+      if (imageTypes.some(type => type != extension) && fs.existsSync(`thumbnails/${file}`)) {
+        thumbnail = `data:image/${extension};base64,${fs.readFileSync(`thumbnails/${file}`, { encoding: 'base64' })}`;
       }
 
       localFiles.push({
         id: fileId,
         name: file,
-        thumbnail: fileThumbnail,
-        type: fileExtension,
-        size: fileSize,
-        date: fileDate,
+        thumbnail: thumbnail,
+        type: extension,
+        size: size,
+        date: date,
       });
 
       fileId++;
     });
 
-    result.send({ files: localFiles, count: count });
+    result.send({ files: localFiles, count: files.length });
   });
 });
 
@@ -101,19 +92,23 @@ route.post('/api/download', (request, result) => {
 });
 
 route.post('/api/upload', middleware, (request, result) => {
+  const files = [];
   const form = new formidable.IncomingForm({
     maxFileSize: Infinity,
     maxFieldsSize: Infinity,
   });
-  const files = [];
+
+  form.on('error', () => {
+    response.status(500);
+  });
 
   form.on('file', (field, file) => {
     files.push([field, file]);
   });
   
   form.on('end', async () => {
-    // Wait for all file writing tasks to complete
-    const fileWritingPromises = files.map((file) => {
+    // wait for all file writing tasks to complete
+    const fileWriting = files.map((file) => {
       return new Promise((resolve) => {
         fs.rename(
           file[1].filepath,
@@ -122,22 +117,23 @@ route.post('/api/upload', middleware, (request, result) => {
         );
       });
     });
-    await Promise.all(fileWritingPromises);
+    await Promise.all(fileWriting);
   
-    // Wait for all thumbnail generation tasks to complete
-    const thumbnailPromises = files.map((thumbnail) => {
+    // wait for all thumbnail generation tasks to complete
+    const thumbnailWriting = files.map((thumbnail) => {
       return new Promise((resolve) => {
         sharp(`files/${thumbnail[1].originalFilename}`)
           .resize(100, 100)
+          .rotate()
           .toFile(`thumbnails/${thumbnail[1].originalFilename}`, (error) => resolve());
       });
     });
-    await Promise.all(thumbnailPromises);
+    await Promise.all(thumbnailWriting);
   
-    // Send the response once all tasks are completed
+    // send the response once all tasks are completed
     result.sendStatus(200);
   });
-  
+
   form.parse(request);
 });
 
@@ -155,5 +151,5 @@ route.delete('/api/delete', middleware, (request, result) => {
 });
 
 route.listen(process.env.PORT, () => {
-  console.log(`Server listening on port ${process.env.PORT}`);
+  console.log(`Server Listening on Port ${process.env.PORT}`);
 });

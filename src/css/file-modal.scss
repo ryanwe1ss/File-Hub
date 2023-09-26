@@ -11,10 +11,10 @@
   top: 0;
 
   #close {
-    margin-bottom: 10px;
+    margin-top: -10px;
     color: black;
     float: right;
-    font-size: 20px;
+    font-size: 28px;
     font-weight: bold;
   }
   
@@ -26,6 +26,7 @@
   .file-modal-content {
     display: flex;
     flex-direction: column;
+    border-radius: 5px;
 
     background-color: #FEFEFE;
     border: 1px solid #888;
@@ -37,6 +38,7 @@
 
     .file-modal-body {
       img, audio, video {
+        height: auto;
         width: 100%;
       }
     }

@@ -1,6 +1,7 @@
 const path = require('path');
 const Dotenv = require('dotenv-webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: './src/index.js',
@@ -53,6 +54,9 @@ module.exports = {
       template: './public/index.html',
       filename: 'index.html',
       title: 'Caching',
+    }),
+    new CopyWebpackPlugin({
+      patterns: [{ from: 'public/favicon.ico', to: 'favicon.ico' }],
     }),
   ],
   resolve: {

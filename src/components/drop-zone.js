@@ -1,7 +1,7 @@
 function DropZone(args)
 {
   const FileDrop = () => {
-    const dropzone = document.querySelector(".dropzone");
+    const dropzone = document.querySelector(".dropzone-body");
 
     ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
         dropzone.addEventListener(evtName, (e) => e.preventDefault());
@@ -52,9 +52,9 @@ function DropZone(args)
   }
 
   return (
-    <div className="flex flex-col">
-      <div className='dropzone w-1/6 bg-gray-200 flex flex-col justify-center cursor-pointer ml-3' onClick={() => document.getElementById('fileInput').click()} onDragOver={FileDrop}>
-        <div className='text-center mb-4 text-gray-600'>Drop Files Here</div>
+    <div className="dropzone flex flex-col">
+      <div className='dropzone-body w-1/6 bg-gray-200 flex flex-col justify-center cursor-pointer ml-3' onClick={() => document.getElementById('fileInput').click()} onDragOver={FileDrop}>
+        <div className='text-center mb-4 text-gray-700'>Drop Files Here</div>
         
         <div className='flex items-center justify-center'>
           <div className='bi bi-arrow-down-circle text-7xl'></div>
@@ -67,8 +67,9 @@ function DropZone(args)
         <input
           type='file'
           id='fileInput'
-          onChange={args.UploadFiles}
+          onChange={UploadFiles}
           className='hidden'
+          multiple={true}
         />
       </div>
       

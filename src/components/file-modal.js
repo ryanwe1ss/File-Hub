@@ -3,13 +3,15 @@ import '../css/file-modal.scss';
 
 function FileModal(args)
 {
-  const [loaded, setLoaded] = useState(false);
   const [fileContent, setFileContent] = useState(null);
+  const [loaded, setLoaded] = useState(false);
   const [file, setFile] = useState({});
 
   const imageTypes = ['jpg', 'png', 'jpeg'];
   const audioTypes = ['mp3', 'wav', 'ogg'];
   const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
+  
+  let currentWidth = 100;
 
   useEffect(() => {
     if (!args.showFileModal) return;
@@ -53,12 +55,29 @@ function FileModal(args)
 
   }, [args.showFileModal]);
 
+  function ExpandImageOrVideo(action) {
+    currentWidth = action 
+      ? (currentWidth + 10 > 100 ? 100 : currentWidth + 10)
+      : (currentWidth - 10 < 10 ? 10 : currentWidth - 10);
+
+    document.querySelector('img, video').style.width = `${currentWidth}%`;
+  }
+
   if (args.showFileModal) {
     return (
       <div className="file-modal" id="file-modal">
         <div className="file-modal-content">
-          <header className='flex justify-between items-center'>
-            <h4 className='font-bold'>{loaded ? file.name : 'Grabbing File...'}</h4>
+          <header className='flex justify-between'>
+            <div className='flex'>
+              <h4 className='font-bold'>{loaded ? file.name : 'Grabbing File...'}</h4>
+              {imageTypes.some(type => type == file.type) || videoTypes.some(type => type == file.type) ? (
+                  <>
+                    <button onClick={() => ExpandImageOrVideo(true)} className='text-green-500 mb-2 ml-3'><i className='bi bi-plus-circle'></i></button>
+                    <button onClick={() => ExpandImageOrVideo(false)} className='text-red-500 mb-2 ml-2'><i className='bi bi-dash-circle'></i></button>
+                  </>
+                ) : null
+              }
+            </div>
 
             <button id="close" onClick={() => {
               args.setShowFileModal(false);

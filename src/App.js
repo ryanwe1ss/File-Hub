@@ -1,5 +1,5 @@
 // ServerURL URL
-const ServerURL = `${process.env.PROTOCOL}://${window.location.hostname}${process.env.USE_PORT_IN_URL == true ? `:${process.env.PORT}` : ''}`;
+const ServerURL = `${process.env.PROTOCOL}://${window.location.hostname}${process.env.USE_PORT_IN_URL == 'true' ? `:${process.env.PORT}` : ''}`;
 
 // Standard Functions
 import { useEffect, useState } from "react";

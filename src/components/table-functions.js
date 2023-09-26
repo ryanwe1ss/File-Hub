@@ -82,29 +82,31 @@ function TableFunctions(args)
 
   return (
     <div className="mb-4 flex">
-      <input type='text' id='search' placeholder='Search...' onKeyUp={() => {
-        clearTimeout(debounceDelay);
-        debounceDelay = setTimeout(args.FetchFiles, 300);
+      <div className="flex mr-auto" style={{marginRight: "30px"}}>
+        <input type='text' id='search' placeholder='Search...' onKeyUp={() => {
+          clearTimeout(debounceDelay);
+          debounceDelay = setTimeout(args.FetchFiles, 300);
 
-      }} className='px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-600'/>
+        }} className='px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-600'/>
 
-      <select
-        id="limit"
-        onChange={() => args.FetchFiles(document.getElementById('limit').value)}
-        className="ml-4 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-600"
-      >
-        <option value="10">10</option>
-        <option value="20">20</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-        <option value={args.count}>All: {args.count}</option>
-      </select>
+        <select
+          id="limit"
+          onChange={() => args.FetchFiles(document.getElementById('limit').value)}
+          className="ml-4 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-600"
+        >
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value={args.count}>All: {args.count}</option>
+        </select>
 
-      {!args.filesLoaded ?
-        <div>
-          <div className="tiny-spinner"></div>
-        </div> : null
-      }
+        {!args.filesLoaded ?
+          <div>
+            <div className="tiny-spinner"></div>
+          </div> : null
+        }
+      </div>
 
       <div className="flex ml-auto">
         {!args.authenticated ?
@@ -137,7 +139,7 @@ function TableFunctions(args)
           disabled={args.itemsSelected == 0}
           className='bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2'
           >
-            <i className="bi bi-upload"></i>
+            <i className="bi bi-download"></i>
         </button>
 
         <button
