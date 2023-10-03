@@ -3,6 +3,7 @@ File Hub allows you to upload your own files and download existing ones that are
 React.JS and TailwindCSS. Backend in Node.JS
 
 ![](demo/app.png)
+![](demo/modal.png)
 ![](demo/auth.png)<br/>
 
 # Requirements
