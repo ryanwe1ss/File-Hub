@@ -26,8 +26,10 @@ route.get('/api/authenticate', (request, result) => {
   result.sendStatus(request.query.token != process.env.PASSWORD ? 401 : 200);
 });
 
-route.get('/api/file/:name', middleware, (request, result) => {
-  fs.readFile(`files/${request.params.name}`, (error, data) => {
+route.get('/api/file', middleware, (request, result) => {
+  const fileName = request.headers['file-name'];
+
+  fs.readFile(`files/${fileName}`, (error, data) => {
     if (error) return result.sendStatus(404);
     result.send(data);
   });

@@ -10,6 +10,7 @@ function FileModal(args)
   const imageTypes = ['jpg', 'png', 'jpeg'];
   const audioTypes = ['mp3', 'wav', 'ogg'];
   const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
+  const allowedCharacterTypes = ['txt', 'sql', 'json', 'html', 'csv'];
   
   let currentWidth = 100;
 
@@ -32,11 +33,12 @@ function FileModal(args)
     }
 
     setFile(file);
-    fetch(`${args.ServerURL}/api/file/${file.name}`, {
+    fetch(`${args.ServerURL}/api/file`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': localStorage.getItem('token'),
+        'File-Name': file.name,
       },
     })
     .then(response => {
@@ -65,8 +67,8 @@ function FileModal(args)
 
   if (args.showFileModal) {
     return (
-      <div className="file-modal" id="file-modal">
-        <div className="file-modal-content">
+      <div className='file-modal' id='file-modal'>
+        <div className='file-modal-content'>
           <header className='flex justify-between'>
             <div className='flex'>
               <h4 className='font-bold'>{loaded ? file.name : 'Grabbing File...'}</h4>
@@ -79,7 +81,7 @@ function FileModal(args)
               }
             </div>
 
-            <button id="close" onClick={() => {
+            <button id='close' onClick={() => {
               args.setShowFileModal(false);
               setFileContent(null);
               setLoaded(false);
@@ -89,19 +91,21 @@ function FileModal(args)
           <hr/><br/>
   
           {loaded ? (
-            <div className="file-modal-body">
+            <div className='file-modal-body'>
               {imageTypes.some(type => type == file.type)
                 ? <img src={URL.createObjectURL(fileContent)} alt={file.name} />
                 : videoTypes.some(type => type == file.type)
                 ? <video src={URL.createObjectURL(fileContent)} controls></video>
                 : audioTypes.some(type => type == file.type)
                 ? <audio src={URL.createObjectURL(fileContent)} controls></audio>
-                : <p className='whitespace-pre-line'>{fileContent}</p>
+                : <p className='whitespace-pre-line'>
+                    {allowedCharacterTypes.includes(file.type) ? fileContent : 'File cannot be displayed because it is not supported'}
+                  </p>
               }
             </div>
           ) : (
-            <div className="mt-36">
-              <div className="spinner"></div>
+            <div className='mt-36'>
+              <div className='spinner'></div>
             </div>
           )}
         </div>

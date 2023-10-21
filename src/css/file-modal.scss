@@ -37,6 +37,8 @@
     width: 90%;
 
     .file-modal-body {
+      word-break: break-all;
+
       img, audio, video {
         height: auto;
         width: 100%;
