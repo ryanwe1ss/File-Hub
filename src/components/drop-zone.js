@@ -24,6 +24,11 @@ function DropZone(args)
     const files = event.type == 'drop' ? event.dataTransfer.files : event.target.files;
 
     for (let file = 0; file < files.length; file++) {
+      if (files[file].size > 100000000) {
+        alert('File size is too large. Maximum file size is 100MB.');
+        return;
+      }
+
       form.append('files', files[file]);
     }
 

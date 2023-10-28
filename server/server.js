@@ -95,10 +95,7 @@ route.post('/api/download', (request, result) => {
 
 route.post('/api/upload', middleware, (request, result) => {
   const files = [];
-  const form = new formidable.IncomingForm({
-    maxFileSize: Infinity,
-    maxFieldsSize: Infinity,
-  });
+  const form = new formidable.IncomingForm();
 
   form.on('error', () => {
     response.status(500);
