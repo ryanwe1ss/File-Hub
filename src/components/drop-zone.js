@@ -1,21 +1,25 @@
+import { useRef } from 'react';
+
 function DropZone(args)
 {
+  const fileInputRef = useRef(null);
+  const uploadBarRef = useRef(null);
+  const dropZoneRef = useRef(null);
+
   const FileDrop = () => {
-    const dropzone = document.querySelector(".dropzone-body");
-
-    ["dragenter", "dragover", "dragleave", "drop"].forEach(evtName => {
-        dropzone.addEventListener(evtName, (e) => e.preventDefault());
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZoneRef.current.addEventListener(eventName, (e) => e.preventDefault());
     });
 
-    ["dragenter", "dragover"].forEach(evtName => {
-        dropzone.addEventListener(evtName, () => dropzone.classList.add("zoneborder"));
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZoneRef.current.addEventListener(eventName, () => dropZoneRef.current.classList.add('zoneborder'));
     });
 
-    ["dragleave", "drop"].forEach(evtName => {
-        dropzone.addEventListener(evtName, () => dropzone.classList.remove("zoneborder"));
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZoneRef.current.addEventListener(eventName, () => dropZoneRef.current.classList.remove('zoneborder'));
     });
 
-    dropzone.addEventListener("drop", UploadFiles);
+    dropZoneRef.current.addEventListener('drop', UploadFiles);
   }
 
   function UploadFiles(event) {
@@ -37,7 +41,7 @@ function DropZone(args)
 
     request.upload.addEventListener('progress', event => {
       const percent = Math.round((event.loaded / event.total) * 100);
-      document.querySelector('.upload').style.width = `${percent}%`;
+      uploadBarRef.current.style.width = `${percent}%`;
     });
 
     request.addEventListener('load', () => {
@@ -45,8 +49,8 @@ function DropZone(args)
       args.setItemsSelected(0);
 
       const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-      document.querySelector('.upload').style.width = '0%';
-      document.getElementById('checkbox-all').checked = false;
+      uploadBarRef.current.style.width = '0%';
+      args.checkAllRef.current.checked = false;
 
       for (let index = 1; index < checkboxes.length; index++) {
         checkboxes[index].checked = false;
@@ -54,24 +58,30 @@ function DropZone(args)
     });
 
     request.send(form);
+    fileInputRef.current.value = null;
   }
 
   return (
-    <div className="dropzone flex flex-col">
-      <div className='dropzone-body w-1/6 bg-gray-200 flex flex-col justify-center cursor-pointer ml-3' onClick={() => document.getElementById('fileInput').click()} onDragOver={FileDrop}>
+    <div className='dropzone flex flex-col'>
+      <div
+        className='dropzone-body w-1/6 bg-gray-200 flex flex-col justify-center cursor-pointer ml-3'
+        onClick={() => fileInputRef.current.click()}
+        ref={dropZoneRef}
+        onDragOver={FileDrop}
+      >
         <div className='text-center mb-4 text-gray-700'>Drop Files Here</div>
         
         <div className='flex items-center justify-center'>
           <div className='bi bi-arrow-down-circle text-7xl'></div>
         </div>
 
-        <div className="upload-bar mt-auto">
-          <div className="upload"></div>
+        <div className='upload-bar mt-auto'>
+          <div className='upload' ref={uploadBarRef}></div>
         </div>
 
         <input
           type='file'
-          id='fileInput'
+          ref={fileInputRef}
           onChange={UploadFiles}
           className='hidden'
           multiple={true}

@@ -1,56 +1,57 @@
+import { useRef } from 'react';
 import '../css/auth-modal.scss';
 
 function AuthenticationModal(args)
 {
-  function PasswordAuthenticate() {
-    const password = document.getElementById('password').value;
-    const message = document.getElementById('message');
+  const passwordRef = useRef(null);
+  const messageRef = useRef(null);
 
-    fetch(`${args.ServerURL}/api/authenticate?token=${password}`)
+  function PasswordAuthenticate() {
+    fetch(`${args.ServerURL}/api/authenticate?token=${passwordRef.current.value}`)
       .then(response => {
         if (response.status != 200) {
-          document.getElementById('password').value = null;
-          return message.classList.remove('hidden');
+          passwordRef.current.value = null;
+          return messageRef.current.classList.remove('hidden');
         }
 
-        localStorage.setItem('token', password);
-        message.classList.add('hidden');
+        localStorage.setItem('token', passwordRef.current.value);
+        messageRef.current.classList.add('hidden');
         
-        document.getElementById('auth-modal').classList.add('hidden');
-        document.getElementById('reload').click();
+        args.authModalRef.current.classList.add('hidden');
+        args.reloadRef.current.click();
       }
     );
   }
 
   return (
-    <div className="auth-modal hidden" id="auth-modal">
-      <div className="auth-modal-content">
+    <div className='auth-modal hidden' ref={args.authModalRef}>
+      <div className='auth-modal-content'>
         <header className='flex justify-between items-center'>
           <h4 className='font-bold'>Authentication Required</h4>
         </header>
         <hr/>
 
-        <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mt-6">
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">File Hub Password</label>
+        <div className='bg-white shadow-md rounded px-8 pt-6 pb-8 mt-6'>
+          <div className='mb-6'>
+            <label className='block text-gray-700 text-sm font-bold mb-2'>File Hub Password</label>
             <input
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="password"
-              type="password"
-              placeholder="Password"
+              className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
+              ref={passwordRef}
+              type='password'
+              placeholder='Password'
             />
           </div>
-          <div className="flex">
+          <div className='flex'>
             <button
               onClick={PasswordAuthenticate}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              type="button"
+              className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline'
+              type='button'
             >
               Authenticate&nbsp;&nbsp;
               <i className='bi bi-arrow-right'></i>
             </button>
 
-            <div className='ml-6 mt-2 hidden' id='message'>
+            <div className='ml-6 mt-2 hidden' ref={messageRef}>
               <span className='text-red-500 font-bold'>Incorrect password</span>
             </div>
           </div>

@@ -2,14 +2,14 @@
 const ServerURL = `${process.env.PROTOCOL}://${window.location.hostname}${process.env.USE_PORT_IN_URL == 'true' ? `:${process.env.PORT}` : ''}`;
 
 // Standard Functions
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from 'react';
 
 // Load Components
-import AuthenticationModal from "./components/auth-modal";
-import FileModal from "./components/file-modal";
-import FileTable from "./components/file-table";
-import DropZone from "./components/drop-zone";
-import TableFunctions from "./components/table-functions";
+import AuthenticationModal from './components/auth-modal';
+import FileModal from './components/file-modal';
+import FileTable from './components/file-table';
+import DropZone from './components/drop-zone';
+import TableFunctions from './components/table-functions';
 
 function App()
 {
@@ -23,9 +23,15 @@ function App()
   const [count, setCount] = useState(0);
   const [itemsSelected, setItemsSelected] = useState(0);
 
+  const authModalRef = useRef(null);
+  const checkAllRef = useRef(null);
+  const reloadRef = useRef(null);
+  const searchRef = useRef(null);
+  const limitRef = useRef(null);
+
   function FetchFiles() {
-    const searchQuery = document.getElementById('search').value;
-    const limit = document.getElementById('limit').value;
+    const searchQuery = searchRef.current.value;
+    const limit = limitRef.current.value;
 
     setFilesLoaded(false);
     fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${limit}`, {
@@ -47,17 +53,17 @@ function App()
     .catch(() => {
       setFiles([]);
       setAuthenticated(false);
-      document.getElementById('auth-modal').classList.remove('hidden');
+      authModalRef.current.classList.remove('hidden');
     })
     .finally(() => setFilesLoaded(true));
   }
 
   return (
     <div className='page overflow-hidden'>
-      <AuthenticationModal ServerURL={ServerURL} />
+      <AuthenticationModal ServerURL={ServerURL} authModalRef={authModalRef} reloadRef={reloadRef}/>
       <FileModal ServerURL={ServerURL} showFileModal={showFileModal} setShowFileModal={setShowFileModal} />
 
-      <div className="w-full">
+      <div className='w-full'>
         <TableFunctions
           count={count}
           ServerURL={ServerURL}
@@ -67,17 +73,28 @@ function App()
           FetchFiles={FetchFiles}
           setShowFileModal={setShowFileModal}
           setItemsSelected={setItemsSelected}
+          checkAllRef={checkAllRef}
+          searchRef={searchRef}
+          reloadRef={reloadRef}
+          limitRef={limitRef}
         />
 
         <FileTable
           files={files}
           ServerURL={ServerURL}
+          checkAllRef={checkAllRef}
           itemsSelected={itemsSelected}
           setItemsSelected={setItemsSelected}
         />
       </div>
 
-      <DropZone ServerURL={ServerURL} FetchFiles={FetchFiles} itemsSelected={itemsSelected} setItemsSelected={setItemsSelected} />
+      <DropZone
+        ServerURL={ServerURL}
+        itemsSelected={itemsSelected}
+        checkAllRef={checkAllRef}
+        FetchFiles={FetchFiles}
+        setItemsSelected={setItemsSelected}
+      />
     </div>
   );
 }

@@ -1,5 +1,8 @@
+import { useRef } from 'react';
+
 function TableFunctions(args)
 {
+  const downloadRef = useRef(null);
   let debounceDelay = null;
 
   function DownloadFiles() {
@@ -21,28 +24,22 @@ function TableFunctions(args)
 
     request.addEventListener('progress', (event) => {
         const percent = Math.round((event.loaded / event.total) * 100);
-        document.querySelector('.download').style.width = `${percent}%`;
+        downloadRef.current.style.width = `${percent}%`;
     });
     
     request.addEventListener('load', () => {
       const instance = document.createElement('a');
+
       instance.href = window.URL.createObjectURL(request.response);
+      instance.download = files.length == 1 ? files[0].name : 'files.zip';
+      instance.click();
 
-      if (files.length == 1) {
-        instance.download = files[0].name;
-        instance.click();
-
-      } else {
-        instance.download = 'files.zip';
-        instance.click();
-      }
-
-      document.getElementById('checkbox-all').checked = false;
+      args.checkAllRef.current.checked = false;
       checkboxes.forEach(checkbox => {
         checkbox.checked = false;
       });
 
-      document.querySelector('.download').style.width = '0%';
+      downloadRef.current.style.width = '0%';
       args.setItemsSelected(0);
     });
 
@@ -73,7 +70,7 @@ function TableFunctions(args)
       else alert(`Problem Deleting File(s) - Error: [${response.status}]`);
     });
 
-    document.getElementById('checkbox-all').checked = false;
+    args.checkAllRef.current.checked = false;
     checkboxes.forEach(checkbox => {
       checkbox.checked = false;
     
@@ -81,49 +78,49 @@ function TableFunctions(args)
   }
 
   return (
-    <div className="mb-4 flex">
-      <div className="flex mr-auto" style={{marginRight: "30px"}}>
-        <input type='text' id='search' placeholder='Search...' onKeyUp={() => {
+    <div className='mb-4 flex'>
+      <div className='flex mr-auto' style={{marginRight: '30px'}}>
+        <input type='text' ref={args.searchRef} placeholder='Search...' onKeyUp={() => {
           clearTimeout(debounceDelay);
           debounceDelay = setTimeout(args.FetchFiles, 300);
 
         }} className='px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-600'/>
 
         <select
-          id="limit"
-          onChange={() => args.FetchFiles(document.getElementById('limit').value)}
-          className="ml-4 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-600"
+          ref={args.limitRef}
+          onChange={args.FetchFiles}
+          className='ml-4 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-600'
         >
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
+          <option value='10'>10</option>
+          <option value='20'>20</option>
+          <option value='50'>50</option>
+          <option value='100'>100</option>
           <option value={args.count}>All: {args.count}</option>
         </select>
 
         {!args.filesLoaded ?
           <div>
-            <div className="tiny-spinner"></div>
+            <div className='tiny-spinner'></div>
           </div> : null
         }
       </div>
 
-      <div className="flex ml-auto">
+      <div className='flex ml-auto'>
         {!args.authenticated ?
-          <button className="mr-3 ml-12"><i className="bi bi-lock-fill text-2xl text-red-500"></i></button> :
-          <button className="mr-3 ml-12"><i className="bi bi-unlock-fill text-2xl text-green-500"></i></button>
+          <button className='mr-3 ml-12'><i className='bi bi-lock-fill text-2xl text-red-500'></i></button> :
+          <button className='mr-3 ml-12'><i className='bi bi-unlock-fill text-2xl text-green-500'></i></button>
         }
 
-        <div className="download-bar mt-auto mr-3">
-          <div className="download"></div>
+        <div className='download-bar mt-auto mr-3'>
+          <div className='download' ref={downloadRef}></div>
         </div>
 
         <button
-          id='reload'
+          ref={args.reloadRef}
           onClick={args.FetchFiles}
           className='bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded mr-2'
         >
-          <i className="bi bi-arrow-clockwise"></i>
+          <i className='bi bi-arrow-clockwise'></i>
         </button>
 
         <button
@@ -131,7 +128,7 @@ function TableFunctions(args)
           disabled={args.itemsSelected != 1}
           className='bg-orange-500 hover:bg-orange-700 text-white py-2 px-4 rounded mr-2'
         >
-          <i className="bi bi-card-list"></i>
+          <i className='bi bi-card-list'></i>
         </button>
 
         <button
@@ -139,7 +136,7 @@ function TableFunctions(args)
           disabled={args.itemsSelected == 0}
           className='bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2'
           >
-            <i className="bi bi-download"></i>
+            <i className='bi bi-download'></i>
         </button>
 
         <button
@@ -147,7 +144,7 @@ function TableFunctions(args)
           disabled={args.itemsSelected == 0}
           className='bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded mr-3'
           >
-            <i className="bi bi-trash"></i>
+            <i className='bi bi-trash'></i>
         </button>
       </div>
     </div>
