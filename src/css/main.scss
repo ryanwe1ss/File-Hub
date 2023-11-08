@@ -17,7 +17,11 @@
 }
 
 .zoneborder {
-  border-color: rgb(184, 55, 184);
+  border: 2px solid rgb(184, 55, 184) !important;
+}
+
+.no-zoneborder {
+  border: 2px solid white !important;
 }
 
 table {

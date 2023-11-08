@@ -1,8 +1,5 @@
-import { useRef } from 'react';
-
 function TableFunctions(args)
 {
-  const downloadRef = useRef(null);
   let debounceDelay = null;
 
   function DownloadFiles() {
@@ -24,7 +21,7 @@ function TableFunctions(args)
 
     request.addEventListener('progress', (event) => {
         const percent = Math.round((event.loaded / event.total) * 100);
-        downloadRef.current.style.width = `${percent}%`;
+        args.loadingBarRef.current.style.width = `${percent}%`;
     });
     
     request.addEventListener('load', () => {
@@ -39,7 +36,7 @@ function TableFunctions(args)
         checkbox.checked = false;
       });
 
-      downloadRef.current.style.width = '0%';
+      args.loadingBarRef.current.style.width = '0%';
       args.setItemsSelected(0);
     });
 
@@ -112,7 +109,7 @@ function TableFunctions(args)
         }
 
         <div className='download-bar mt-auto mr-3'>
-          <div className='download' ref={downloadRef}></div>
+          <div className='download' ref={args.loadingBarRef}></div>
         </div>
 
         <button
@@ -137,6 +134,13 @@ function TableFunctions(args)
           className='bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2'
           >
             <i className='bi bi-download'></i>
+        </button>
+
+        <button
+          onClick={() => args.fileInputRef.current.click()}
+          className='bg-purple-500 hover:bg-purple-700 text-white py-2 px-4 rounded mr-2'
+        >
+          <i className='bi bi-upload'></i>
         </button>
 
         <button
