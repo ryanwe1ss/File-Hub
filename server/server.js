@@ -16,14 +16,19 @@ route.use(express.json());
 route.use(cors());
 
 const middleware = (request, result, next) => {
-  if (request.headers.authorization != process.env.PASSWORD) {
+  if (Buffer.from(request.headers.authorization, 'base64').toString('ascii') != process.env.PASSWORD) {
     return result.sendStatus(401);
   
   } next();
 };
 
 route.get('/api/authenticate', (request, result) => {
-  result.sendStatus(request.query.token != process.env.PASSWORD ? 401 : 200);
+  result.sendStatus(
+    Buffer.from(request.headers.authorization, 'base64').toString('ascii') !=
+    process.env.PASSWORD
+      ? 401
+      : 200
+    );
 });
 
 route.get('/api/file', middleware, (request, result) => {

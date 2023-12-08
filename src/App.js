@@ -39,7 +39,7 @@ function App()
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token'),
+        'Authorization': localStorage.getItem('authorization'),
       },
     })
     .then(response => {

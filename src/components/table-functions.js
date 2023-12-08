@@ -16,7 +16,7 @@ function TableFunctions(args)
 
     request.open('POST', `${args.ServerURL}/api/download`);
     request.setRequestHeader('Content-Type', 'application/json');
-    request.setRequestHeader('Authorization', localStorage.getItem('token'));
+    request.setRequestHeader('Authorization', localStorage.getItem('authorization'));
     request.responseType = 'blob';
 
     request.addEventListener('progress', (event) => {
@@ -58,7 +58,7 @@ function TableFunctions(args)
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token'),
+        'Authorization': localStorage.getItem('authorization'),
       },
       body: JSON.stringify(files),
     })

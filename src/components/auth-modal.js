@@ -7,14 +7,20 @@ function AuthenticationModal(args)
   const messageRef = useRef(null);
 
   function PasswordAuthenticate() {
-    fetch(`${args.ServerURL}/api/authenticate?token=${passwordRef.current.value}`)
+    fetch(`${args.ServerURL}/api/authenticate`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'authorization': btoa(passwordRef.current.value),
+      },
+    })
       .then(response => {
         if (response.status != 200) {
           passwordRef.current.value = null;
           return messageRef.current.classList.remove('hidden');
         }
 
-        localStorage.setItem('token', passwordRef.current.value);
+        localStorage.setItem('authorization', btoa(passwordRef.current.value));
         messageRef.current.classList.add('hidden');
         
         args.authModalRef.current.classList.add('hidden');
