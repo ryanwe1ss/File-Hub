@@ -1,4 +1,5 @@
 require('dotenv').config({ path: '../.env' });
+require('./file-listener');
 
 const formidable = require('formidable');
 const range = require('express-range');
@@ -154,6 +155,6 @@ route.delete('/api/delete', middleware, (request, result) => {
   result.sendStatus(200);
 });
 
-route.listen(process.env.PORT, () => {
-  console.log(`Server Listening on Port ${process.env.PORT}`);
+route.listen(process.env.SERVER_PORT, () => {
+  console.log(`Server Listening on Port ${process.env.SERVER_PORT}`);
 });

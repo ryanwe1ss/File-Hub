@@ -22,9 +22,8 @@ function AuthenticationModal(args)
 
         localStorage.setItem('authorization', btoa(passwordRef.current.value));
         messageRef.current.classList.add('hidden');
-        
         args.authModalRef.current.classList.add('hidden');
-        args.reloadRef.current.click();
+        args.FetchFiles();
       }
     );
   }

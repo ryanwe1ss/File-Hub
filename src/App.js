@@ -1,5 +1,6 @@
 // ServerURL URL
-const ServerURL = `${process.env.PROTOCOL}://${window.location.hostname}${process.env.USE_PORT_IN_URL == 'true' ? `:${process.env.PORT}` : ''}`;
+const ServerURL = `${process.env.PROTOCOL}://${window.location.hostname}${process.env.USE_PORT_IN_URL == 'true' ? `:${process.env.SERVER_PORT}` : ''}`;
+const SocketURL = `ws://${window.location.hostname}:${process.env.FILE_LISTENER_PORT}`;
 
 // Standard Functions
 import { useEffect, useState, useRef } from 'react';
@@ -12,7 +13,11 @@ import FileTable from './components/file-table';
 
 function App()
 {
-  useEffect(() => FetchFiles(), []);
+  useEffect(() => {
+    new WebSocket(SocketURL).addEventListener('message', () => FetchFiles());
+    FetchFiles();
+  }, []);
+
   const [authenticated, setAuthenticated] = useState(false);
   const [showFileModal, setShowFileModal] = useState(false);
 
@@ -26,7 +31,6 @@ function App()
   const fileInputRef = useRef(null);
   const loadingBarRef = useRef(null);
   const checkAllRef = useRef(null);
-  const reloadRef = useRef(null);
   const searchRef = useRef(null);
   const limitRef = useRef(null);
 
@@ -61,7 +65,7 @@ function App()
 
   return (
     <div className='page overflow-hidden'>
-      <AuthenticationModal ServerURL={ServerURL} authModalRef={authModalRef} reloadRef={reloadRef}/>
+      <AuthenticationModal ServerURL={ServerURL} authModalRef={authModalRef} FetchFiles={FetchFiles}/>
       <FileModal ServerURL={ServerURL} showFileModal={showFileModal} setShowFileModal={setShowFileModal} />
 
       <div className='w-full'>
@@ -78,7 +82,6 @@ function App()
           setItemsSelected={setItemsSelected}
           checkAllRef={checkAllRef}
           searchRef={searchRef}
-          reloadRef={reloadRef}
           limitRef={limitRef}
         />
 

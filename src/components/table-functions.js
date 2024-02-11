@@ -113,14 +113,6 @@ function TableFunctions(args)
         </div>
 
         <button
-          ref={args.reloadRef}
-          onClick={args.FetchFiles}
-          className='bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded mr-2'
-        >
-          <i className='bi bi-arrow-clockwise'></i>
-        </button>
-
-        <button
           onClick={() => args.setShowFileModal(true)}
           disabled={args.itemsSelected != 1}
           className='bg-orange-500 hover:bg-orange-700 text-white py-2 px-4 rounded mr-2'
