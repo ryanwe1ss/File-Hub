@@ -1,6 +1,6 @@
 // ServerURL URL
 const ServerURL = `${process.env.PROTOCOL}://${window.location.hostname}${process.env.USE_PORT_IN_URL == 'true' ? `:${process.env.SERVER_PORT}` : ''}`;
-const SocketURL = `ws://${window.location.hostname}:${process.env.FILE_LISTENER_PORT}`;
+const SocketURL = `${process.env.PROTOCOL == 'https' ? 'wss' : 'ws'}://${window.location.hostname}${process.env.USE_PORT_IN_URL == 'true' ? `:${process.env.FILE_LISTENER_PORT}` : ''}/listener-api`;
 
 // Standard Functions
 import { useEffect, useState, useRef } from 'react';
@@ -14,7 +14,7 @@ import FileTable from './components/file-table';
 function App()
 {
   useEffect(() => {
-    new WebSocket(SocketURL).addEventListener('message', () => FetchFiles());
+    ConnectWebSocket();
     FetchFiles();
   }, []);
 
@@ -33,6 +33,12 @@ function App()
   const checkAllRef = useRef(null);
   const searchRef = useRef(null);
   const limitRef = useRef(null);
+
+  function ConnectWebSocket() {
+    const socket = new WebSocket(SocketURL);
+    socket.addEventListener('message', () => FetchFiles());
+    socket.addEventListener('close', () => setTimeout(() => ConnectWebSocket(), 1000));
+  }
 
   function FetchFiles() {
     const searchQuery = searchRef.current.value;

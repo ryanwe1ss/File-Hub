@@ -1,7 +1,12 @@
+const express = require('express');
 const webSocket = require('ws');
+const http = require('http');
 const fs = require('fs');
 
-const wss = new webSocket.Server({ port: process.env.FILE_LISTENER_PORT });
+const wss = new webSocket.Server({ noServer: true });
+const listenerApi = express();
+const httpServer = http.createServer(listenerApi);
+
 const fileFolder = 'files/';
 let alteredFiles = new Set();
 
@@ -31,4 +36,14 @@ wss.on('connection', (ws) => {
 
     }, 100);
   });
+});
+
+httpServer.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (socket) => {
+    wss.emit('connection', socket, request);
+  });
+});
+
+httpServer.listen(process.env.FILE_LISTENER_PORT, () => {
+  console.log(`File Listener on Port ${process.env.FILE_LISTENER_PORT}`);
 });
