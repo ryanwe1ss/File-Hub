@@ -63,8 +63,9 @@ function TableFunctions(args)
       body: JSON.stringify(files),
     })
     .then(response => {
-      if (response.status == 200) args.FetchFiles();
-      else alert(`Problem Deleting File(s) - Error: [${response.status}]`);
+      if (response.status != 200) {
+        alert(`Problem Deleting File(s) - Error: [${response.status}]`);
+      }
     });
 
     args.checkAllRef.current.checked = false;

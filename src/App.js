@@ -99,7 +99,6 @@ function App()
           checkAllRef={checkAllRef}
           itemsSelected={itemsSelected}
           setItemsSelected={setItemsSelected}
-          FetchFiles={FetchFiles}
         />
       </div>
     </div>

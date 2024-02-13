@@ -42,27 +42,27 @@ route.get('/api/file', middleware, (request, result) => {
 });
 
 route.get('/api/files', middleware, (request, result) => {
-  const searchQuery = request.query.name;
+  const searchQuery = request.query.name.toLowerCase();
   const limit = request.query.limit;
   const localFiles = [];
   let fileId = 1;
 
   fs.readdir('files', (error, files) => {
-    files.forEach(file => {
-      if (searchQuery && !file.includes(searchQuery) || limit == fileId - 1) return;
+    files.forEach(fileName => {
+      if (searchQuery && !fileName.toLowerCase().includes(searchQuery) || limit == fileId - 1) return;
 
-      const extension = file.split('.').pop().toLowerCase();
-      const size = fs.statSync(`files/${file}`).size;
-      const date = fs.statSync(`files/${file}`).mtime;
+      const extension = fileName.split('.').pop().toLowerCase();
+      const size = fs.statSync(`files/${fileName}`).size;
+      const date = fs.statSync(`files/${fileName}`).mtime;
       let thumbnail = null;
 
-      if (imageTypes.some(type => type != extension) && fs.existsSync(`thumbnails/${file}`)) {
-        thumbnail = `data:image/${extension};base64,${fs.readFileSync(`thumbnails/${file}`, { encoding: 'base64' })}`;
+      if (imageTypes.some(type => type != extension) && fs.existsSync(`thumbnails/${fileName}`)) {
+        thumbnail = `data:image/${extension};base64,${fs.readFileSync(`thumbnails/${fileName}`, { encoding: 'base64' })}`;
       }
 
       localFiles.push({
         id: fileId,
-        name: file,
+        name: fileName,
         thumbnail: thumbnail,
         type: extension,
         size: size,

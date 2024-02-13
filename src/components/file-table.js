@@ -41,7 +41,6 @@ function FileTable(args)
     });
 
     request.addEventListener('load', () => {
-      setTimeout(() => args.FetchFiles(), 100);
       args.setItemsSelected(0);
 
       const checkboxes = document.querySelectorAll('input[type="checkbox"]');
