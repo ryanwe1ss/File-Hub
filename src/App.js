@@ -18,6 +18,8 @@ function App()
     FetchFiles();
   }, []);
 
+  const limits = [10, 20, 50, 100];
+
   const [authenticated, setAuthenticated] = useState(false);
   const [showFileModal, setShowFileModal] = useState(false);
 
@@ -36,16 +38,23 @@ function App()
 
   function ConnectWebSocket() {
     const socket = new WebSocket(SocketURL);
-    socket.addEventListener('message', () => FetchFiles());
+    socket.addEventListener('message', (event) => FetchFiles(event.data));
     socket.addEventListener('close', () => setTimeout(() => ConnectWebSocket(), 1000));
   }
 
-  function FetchFiles() {
+  function FetchFiles(limit) {
     const searchQuery = searchRef.current.value;
-    const limit = limitRef.current.value;
+    const maxFiles =
+      limits.includes(parseInt(limitRef.current.value))
+        ? limitRef.current.value
+        : limit && !limit?.nativeEvent
+        ? limit
+        : limit?.nativeEvent
+        ? limitRef.current.value
+        : 0;
 
     setFilesLoaded(false);
-    fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${limit}`, {
+    fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${maxFiles}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -77,6 +86,8 @@ function App()
       <div className='w-full'>
         <TableFunctions
           count={count}
+          limits={limits}
+
           ServerURL={ServerURL}
           loadingBarRef={loadingBarRef}
           fileInputRef={fileInputRef}

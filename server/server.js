@@ -1,5 +1,5 @@
 require('dotenv').config({ path: '../.env' });
-require('./file-listener');
+const fileListener = require('./file-listener');
 
 const formidable = require('formidable');
 const range = require('express-range');
@@ -134,8 +134,8 @@ route.post('/api/upload', middleware, (request, result) => {
       });
     });
     await Promise.all(thumbnailWriting);
-  
-    // send the response once all tasks are completed
+
+    fileListener.synchronize();
     result.sendStatus(200);
   });
 
@@ -152,6 +152,7 @@ route.delete('/api/delete', middleware, (request, result) => {
     }
   });
 
+  fileListener.synchronize();
   result.sendStatus(200);
 });
 

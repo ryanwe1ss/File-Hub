@@ -89,10 +89,9 @@ function TableFunctions(args)
           onChange={args.FetchFiles}
           className='ml-4 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:border-blue-600'
         >
-          <option value='10'>10</option>
-          <option value='20'>20</option>
-          <option value='50'>50</option>
-          <option value='100'>100</option>
+          {args.limits.map((limit, index) => {
+            return <option key={index} value={limit}>{limit}</option>;
+          })}
           <option value={args.count}>All: {args.count}</option>
         </select>
 
