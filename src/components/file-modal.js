@@ -10,7 +10,6 @@ function FileModal(args)
   const imageTypes = ['jpg', 'png', 'jpeg'];
   const audioTypes = ['mp3', 'wav', 'ogg'];
   const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
-  const allowedCharacterTypes = ['txt', 'sql', 'json', 'html', 'csv'];
   
   let currentWidth = 100;
 
@@ -99,7 +98,7 @@ function FileModal(args)
                 : audioTypes.some(type => type == file.type)
                 ? <audio src={URL.createObjectURL(fileContent)} controls></audio>
                 : <p className='whitespace-pre-line'>
-                    {allowedCharacterTypes.includes(file.type) ? fileContent : 'File cannot be displayed because it is not supported'}
+                    {!(/[\x00-\x08\x0E-\x1F\x7F-\x9F]/).test(fileContent) ? fileContent : 'File cannot be displayed because it is not supported'}
                   </p>
               }
             </div>
