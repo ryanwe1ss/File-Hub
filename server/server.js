@@ -10,7 +10,10 @@ const zip = require('adm-zip');
 const fs = require('fs');
 
 const route = express();
+
+const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
 const imageTypes = ['jpg', 'jpeg', 'png', 'gif'];
+const audioTypes = ['mp3', 'wav', 'ogg'];
 
 route.use(range({ accept: 'bytes' }));
 route.use(express.json());
@@ -37,7 +40,18 @@ route.get('/api/file', middleware, (request, result) => {
 
   fs.readFile(`files/${fileName}`, (error, data) => {
     if (error) return result.sendStatus(404);
-    result.send(data);
+    if (
+      imageTypes.some(type => type == fileName.split('.').pop().toLowerCase()) ||
+      audioTypes.some(type => type == fileName.split('.').pop().toLowerCase()) ||
+      videoTypes.some(type => type == fileName.split('.').pop().toLowerCase())
+    ) {
+      return result.send(data);
+    }
+
+    result.send(/[\x00-\x08\x0E-\x1F\x7F-\x9F]/.test(data.toString())
+      ? 'File cannot be displayed because it is not supported'
+      : data
+    );
   });
 });
 
@@ -80,7 +94,7 @@ route.get('/api/files', middleware, (request, result) => {
   });
 });
 
-route.post('/api/download', (request, result) => {
+route.post('/api/download', middleware, (request, result) => {
   const files = request.body;
   const zipFile = new zip();
 

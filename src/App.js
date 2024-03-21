@@ -53,7 +53,12 @@ function App()
         ? limitRef.current.value
         : 0;
 
+    setItemsSelected(0);
     setFilesLoaded(false);
+
+    document.querySelectorAll('input[type="checkbox"]')
+      .forEach(checkbox => checkbox.checked = false);
+
     fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${maxFiles}`, {
       method: 'GET',
       headers: {
