@@ -48,9 +48,11 @@ route.get('/api/file', middleware, (request, result) => {
       return result.send(data);
     }
 
-    result.send(/[\x00-\x08\x0E-\x1F\x7F-\x9F]/.test(data.toString())
-      ? 'File cannot be displayed because it is not supported'
-      : data
+    const fileContent = data.toString();
+    result.send(
+      /[\x00-\x08\x0E-\x1F\x7F-\x9F]/.test(fileContent) ? 'File cannot be displayed because it is not supported' :
+      fileContent.length > 20000000 ? 'File content is too large to be displayed' :
+      fileContent
     );
   });
 });
