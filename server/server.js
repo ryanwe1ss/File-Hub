@@ -88,10 +88,6 @@ route.get('/api/files', middleware, (request, result) => {
       fileId++;
     });
 
-    localFiles.sort((a, b) => {
-      return b.date - a.date;
-    });
-
     result.send({ files: localFiles, count: files.length });
   });
 });

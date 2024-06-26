@@ -44,14 +44,6 @@ function App()
 
   function FetchFiles(limit) {
     const searchQuery = searchRef.current.value;
-    const maxFiles =
-      limits.includes(parseInt(limitRef.current.value))
-        ? limitRef.current.value
-        : limit && !limit?.nativeEvent
-        ? limit
-        : limit?.nativeEvent
-        ? limitRef.current.value
-        : 0;
 
     setItemsSelected(0);
     setFilesLoaded(false);
@@ -59,7 +51,7 @@ function App()
     document.querySelectorAll('input[type="checkbox"]')
       .forEach(checkbox => checkbox.checked = false);
 
-    fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${maxFiles}`, {
+    fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${limitRef.current.value}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -71,7 +63,7 @@ function App()
       return response.json();
     })
     .then(result => {
-      setCount(searchQuery ? result.files.length : result.count);
+      setCount(result.count);
       setAuthenticated(true);
       setFiles(result.files);
     })
