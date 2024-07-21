@@ -53,9 +53,9 @@ function App()
 
     fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${limitRef.current.value}`, {
       method: 'GET',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('authorization'),
       },
     })
     .then(response => {

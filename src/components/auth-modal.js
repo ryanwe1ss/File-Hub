@@ -8,24 +8,32 @@ function AuthenticationModal(args)
 
   function PasswordAuthenticate() {
     fetch(`${args.ServerURL}/api/authenticate`, {
-      method: 'GET',
+      method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'authorization': btoa(passwordRef.current.value),
       },
+      body: JSON.stringify({
+        'authorization': btoa(passwordRef.current.value),
+      }),
     })
-      .then(response => {
-        if (response.status != 200) {
-          passwordRef.current.value = null;
-          return messageRef.current.classList.remove('hidden');
-        }
+    .then(response => {
+      console.log(response);
+      if (response.status != 200) {
+        passwordRef.current.value = null;
+        return messageRef.current.classList.remove('hidden');
+      }
 
-        localStorage.setItem('authorization', btoa(passwordRef.current.value));
+      return response.json();
+    })
+    .then(authorization => {
+      if (authorization) {
+        sessionStorage.setItem('authorization', authorization.cookie);
         messageRef.current.classList.add('hidden');
         args.authModalRef.current.classList.add('hidden');
         args.FetchFiles();
       }
-    );
+    });
   }
 
   return (
@@ -41,9 +49,9 @@ function AuthenticationModal(args)
             <label className='block text-gray-700 text-sm font-bold mb-2'>File Hub Password</label>
             <input
               className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
+              placeholder='Password'
               ref={passwordRef}
               type='password'
-              placeholder='Password'
             />
           </div>
           <div className='flex'>

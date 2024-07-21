@@ -9,6 +9,7 @@ const cors = require('cors');
 const zip = require('adm-zip');
 const fs = require('fs');
 
+const session = require('express-session');
 const route = express();
 
 const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
@@ -17,22 +18,37 @@ const audioTypes = ['mp3', 'wav', 'ogg'];
 
 route.use(range({ accept: 'bytes' }));
 route.use(express.json());
-route.use(cors());
+route.use(cors({
+  origin: process.env.ORIGIN,
+  credentials: true,
+}));
+route.use(session({
+  resave: true,
+  saveUninitialized: true,
+  secret: 'token',
+  cookie: {
+    maxAge: 3600000,
+  },
+}));
 
 const middleware = (request, result, next) => {
-  if (Buffer.from(request.headers.authorization, 'base64').toString('ascii') != process.env.PASSWORD) {
+  if (!request.session.user) {
     return result.sendStatus(401);
   
   } next();
 };
 
-route.get('/api/authenticate', (request, result) => {
-  result.sendStatus(
-    Buffer.from(request.headers.authorization, 'base64').toString('ascii') !=
-    process.env.PASSWORD
-      ? 401
-      : 200
-    );
+route.post('/api/authenticate', (request, result) => {
+  if (Buffer.from(request.body.authorization, 'base64').toString('ascii') != process.env.PASSWORD) {
+    return result.sendStatus(401);
+  }
+
+  request.session.user = 'authenticated';
+  request.session.save(_ => {
+    result.send({
+      'cookie': request.headers.cookie,
+    });
+  });
 });
 
 route.get('/api/file', middleware, (request, result) => {

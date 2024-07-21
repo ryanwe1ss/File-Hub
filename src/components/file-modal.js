@@ -34,9 +34,9 @@ function FileModal(args)
     setFile(file);
     fetch(`${args.ServerURL}/api/file`, {
       method: 'GET',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('authorization'),
         'File-Name': file.name,
       },
     })

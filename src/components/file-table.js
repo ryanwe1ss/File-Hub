@@ -33,7 +33,7 @@ function FileTable(args)
     }
 
     request.open('POST', `${args.ServerURL}/api/upload`);
-    request.setRequestHeader('Authorization', localStorage.getItem('authorization'));
+    request.withCredentials = true;
 
     request.upload.addEventListener('progress', event => {
       const percent = Math.round((event.loaded / event.total) * 100);
