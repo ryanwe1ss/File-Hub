@@ -18,9 +18,8 @@ function AuthenticationModal(args)
       }),
     })
     .then(response => {
-      console.log(response);
+      passwordRef.current.value = null;
       if (response.status != 200) {
-        passwordRef.current.value = null;
         return messageRef.current.classList.remove('hidden');
       }
 
@@ -28,7 +27,6 @@ function AuthenticationModal(args)
     })
     .then(authorization => {
       if (authorization) {
-        sessionStorage.setItem('authorization', authorization.cookie);
         messageRef.current.classList.add('hidden');
         args.authModalRef.current.classList.add('hidden');
         args.FetchFiles();

@@ -174,6 +174,24 @@ route.post('/api/upload', middleware, (request, result) => {
   form.parse(request);
 });
 
+route.post('/api/save', middleware, (request, result) => {
+  const body = request.body;
+
+  if (!fs.existsSync(`files/${body.name}`)) {
+    return result.send({
+      'status': 'error',
+      'message': 'File does not exist',
+    });
+  }
+
+  fs.writeFile(`files/${body.name}`, body.content, (error) => {
+    return result.send({
+      'status': error ? 'error' : 'success',
+      'message': error ? 'File could not be saved' : 'File saved successfully',
+    });
+  });
+});
+
 route.delete('/api/delete', middleware, (request, result) => {
   const files = request.body;
 

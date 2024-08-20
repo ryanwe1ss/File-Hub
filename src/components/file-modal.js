@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import '../css/file-modal.scss';
 
 function FileModal(args)
 {
+  const [lastOpenedFile, setLastOpenedFile] = useState({});
   const [fileContent, setFileContent] = useState(null);
+  const [editText, setEditText] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [file, setFile] = useState({});
+  const textFile = useRef(null);
 
   const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
   const imageTypes = ['jpg', 'jpeg', 'png', 'gif'];
@@ -14,47 +17,71 @@ function FileModal(args)
   let currentWidth = 100;
 
   useEffect(() => {
-    if (!args.showFileModal) return;
-
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-    let file = {};
-
-    for (let index = 1; index < checkboxes.length; index++) {
-      if (checkboxes[index].checked) {
-        file = {
-          name: checkboxes[index].parentNode.parentNode.childNodes[2].innerHTML,
-          type: checkboxes[index].parentNode.parentNode.childNodes[3].innerHTML.toLowerCase(),
-          size: checkboxes[index].parentNode.parentNode.childNodes[4].innerHTML,
-          date: checkboxes[index].parentNode.parentNode.childNodes[5].innerHTML,
-        
-        }; break;
-      }
+    if (!args.showFileModal) {
+      setEditText(false);
+      return;
     }
 
-    setFile(file);
+    const openFile = args.itemsSelected[0];
+    if (lastOpenedFile.name == openFile.name) {
+      setFileContent(lastOpenedFile.data);
+      setLoaded(true);
+      return;
+    }
+
+    setFile(openFile);
     fetch(`${args.ServerURL}/api/file`, {
       method: 'GET',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'File-Name': file.name,
+        'File-Name': openFile.name,
       },
     })
     .then(response => {
       if (
-        imageTypes.some(type => type == file.type) ||
-        audioTypes.some(type => type == file.type) ||
-        videoTypes.some(type => type == file.type)) {
+        imageTypes.some(type => type == openFile.type) ||
+        audioTypes.some(type => type == openFile.type) ||
+        videoTypes.some(type => type == openFile.type)) {
           return response.blob();
 
       } else return response.text();
     })
     .then(data => {
-      setFileContent(data);
       setLoaded(true);
+      setFileContent(data);
+      setLastOpenedFile({
+        cache_date: new Date().getTime(),
+        name: openFile.name,
+        data: data,
+      });
     });
 
   }, [args.showFileModal]);
+
+  function SaveFileChanges() {
+    const body = {
+      name: file.name,
+      content: textFile.current.value,
+    };
+
+    fetch(`${args.ServerURL}/api/save`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    })
+    .then(response => response.json())
+    .then(() => {
+      setEditText(false);
+      setFileContent(textFile.current.value);
+      setLastOpenedFile({
+        cache_date: new Date().getTime(),
+        name: file.name,
+        data: textFile.current.value,
+      });
+    });
+  }
 
   function ExpandImageOrVideo(action) {
     currentWidth = action 
@@ -76,6 +103,16 @@ function FileModal(args)
                     <button onClick={() => ExpandImageOrVideo(true)} className='text-green-500 mb-2 ml-3'><i className='bi bi-plus-circle'></i></button>
                     <button onClick={() => ExpandImageOrVideo(false)} className='text-red-500 mb-2 ml-2'><i className='bi bi-dash-circle'></i></button>
                   </>
+                ) : file.type == 'txt' ? (
+                  !editText && (
+                    <button onClick={() => setEditText(!editText)} className='text-blue-500 mb-2 ml-3'><i className='text-l bi bi-pencil'></i></button>
+                  ) || (
+                    <>
+                      <button onClick={() => SaveFileChanges()} className='text-green-500 mb-2 ml-3'><i className='text-l bi bi-save'></i></button>
+                      <button onClick={() => setEditText(!editText)} className='text-red-500 mb-2 ml-3'><i className='text-l bi bi-x'></i></button>
+                    </>
+                  )
+                  
                 ) : null
               }
             </div>
@@ -98,7 +135,10 @@ function FileModal(args)
                 : audioTypes.some(type => type == file.type)
                 ? <audio src={URL.createObjectURL(fileContent)} controls></audio>
                 : <p className='whitespace-pre-line'>
-                    {fileContent}
+                    {editText ? (
+                      <textarea className='border-2 border-black w-full h-64 p-1' defaultValue={fileContent} ref={textFile}></textarea>
+                    ) : fileContent
+                  }
                   </p>
               }
             </div>

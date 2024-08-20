@@ -41,34 +41,25 @@ function FileTable(args)
     });
 
     request.addEventListener('load', () => {
-      args.setItemsSelected(0);
-
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
       args.loadingBarRef.current.style.width = '0%';
-      args.checkAllRef.current.checked = false;
-
-      for (let index = 1; index < checkboxes.length; index++) {
-        checkboxes[index].checked = false;
-      }
     });
 
     request.send(form);
     args.fileInputRef.current.value = null;
   }
 
-  function CheckAll() {
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-
-    checkboxes.forEach(checkbox => {
-      checkbox.checked = args.checkAllRef.current.checked;
-      if (checkbox.checked) args.setItemsSelected(checkboxes.length - 1);
-      else args.setItemsSelected(0);
-    });
+  function ClearSelectedFiles() {
+    document.querySelectorAll('tr').forEach(row => row.classList.remove('bg-blue-100'));
+    args.setItemsSelected([]);
   }
 
-  function CheckBox(event) {
-    if (event.target.checked) args.setItemsSelected(args.itemsSelected + 1);
-    else args.setItemsSelected(args.itemsSelected - 1);
+  function SelectFile(event, file) {
+    event.target.parentElement.classList.toggle('bg-blue-100');
+
+    if (args.itemsSelected.includes(file)) {
+      args.setItemsSelected(args.itemsSelected.filter(item => item != file));
+    
+    } else args.setItemsSelected([...args.itemsSelected, file]);
   }
 
   return (
@@ -77,9 +68,15 @@ function FileTable(args)
         <thead>
           <tr>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500'>
-              <input type='checkbox' onChange={CheckAll} className='h-5 w-5 text-blue-600' ref={args.checkAllRef}/>
+              {args.itemsSelected.length > 0 && (
+                <button
+                  onClick={ClearSelectedFiles}
+                  className='text-gray-500 hover:text-gray-700'
+                >
+                  <i className='bi bi-x-lg'></i>
+                </button>
+              )}
             </th>
-            <th></th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Name</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Type</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Size</th>
@@ -93,11 +90,8 @@ function FileTable(args)
           className={isDragging ? 'zoneborder' : 'no-zoneborder'}
         >
           {args.files.length > 0 ? args.files.map(file => (
-            <tr className='bg-gray-50' key={file.id}>
-              <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
-                <input type='checkbox' className='h-5 w-5 text-blue-600' onChange={CheckBox}/>
-              </td>
-              <td className='whitespace-nowrap text-sm text-gray-500'>
+            <tr className='hover:cursor-pointer' key={file.id} onClick={(event) => SelectFile(event, file)}>
+              <td className='px-6 py-3 whitespace-nowrap text-sm text-gray-500 pointer-events-none'>
                 {file.thumbnail ? <img src={file.thumbnail} alt={file.name} className='w-8 h-8 rounded-md'/>
                   : file.type == 'txt' ? <i className='bi bi-file-text text-2xl'></i>
                   : file.type == 'pdf' ? <i className='bi bi-file-earmark-pdf text-2xl'></i>

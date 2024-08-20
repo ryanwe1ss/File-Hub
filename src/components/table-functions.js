@@ -3,16 +3,7 @@ function TableFunctions(args)
   let debounceDelay = null;
 
   function DownloadFiles() {
-    const files = [];
     const request = new XMLHttpRequest();
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-
-    for (let file = 1; file < checkboxes.length; file++) {
-      if (checkboxes[file].checked) {
-        files.push({ name: checkboxes[file].parentNode.parentNode.childNodes[2].innerHTML });
-      }
-    
-    } if (files.length == 0) return;
 
     request.open('POST', `${args.ServerURL}/api/download`);
     request.setRequestHeader('Content-Type', 'application/json');
@@ -20,39 +11,25 @@ function TableFunctions(args)
     request.responseType = 'blob';
 
     request.addEventListener('progress', (event) => {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        args.loadingBarRef.current.style.width = `${percent}%`;
+      const percent = Math.round((event.loaded / event.total) * 100);
+      args.loadingBarRef.current.style.width = `${percent}%`;
     });
     
     request.addEventListener('load', () => {
       const instance = document.createElement('a');
 
       instance.href = window.URL.createObjectURL(request.response);
-      instance.download = files.length == 1 ? files[0].name : 'files.zip';
+      instance.download = args.itemsSelected.length == 1 ? args.itemsSelected[0].name : 'files.zip';
       instance.click();
 
-      args.checkAllRef.current.checked = false;
-      checkboxes.forEach(checkbox => {
-        checkbox.checked = false;
-      });
-
       args.loadingBarRef.current.style.width = '0%';
-      args.setItemsSelected(0);
     });
 
-    request.send(JSON.stringify(files));
+    request.send(JSON.stringify(args.itemsSelected));
   }
 
   function DeleteFiles() {
-    const files = [];
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-
-    for (let i = 1; i < checkboxes.length; i++) {
-      if (checkboxes[i].checked) {
-        files.push({ name: checkboxes[i].parentNode.parentNode.childNodes[2].innerHTML });
-      }
-    
-    } if (files.length == 0) return;
+    if (args.itemsSelected.length == 0) return;
 
     fetch(`${args.ServerURL}/api/delete`, {
       method: 'DELETE',
@@ -60,7 +37,7 @@ function TableFunctions(args)
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(files),
+      body: JSON.stringify(args.itemsSelected),
     })
     .then(response => {
       if (response.status != 200) {
@@ -68,11 +45,7 @@ function TableFunctions(args)
       }
     });
 
-    args.checkAllRef.current.checked = false;
-    checkboxes.forEach(checkbox => {
-      checkbox.checked = false;
-    
-    }); args.setItemsSelected(0);
+    args.setItemsSelected([]);
   }
 
   return (
@@ -114,7 +87,7 @@ function TableFunctions(args)
 
         <button
           onClick={() => args.setShowFileModal(true)}
-          disabled={args.itemsSelected != 1}
+          disabled={args.itemsSelected.length != 1}
           className='bg-orange-500 hover:bg-orange-700 text-white py-2 px-4 rounded mr-2'
         >
           <i className='bi bi-card-list'></i>
@@ -122,7 +95,7 @@ function TableFunctions(args)
 
         <button
           onClick={DownloadFiles}
-          disabled={args.itemsSelected == 0}
+          disabled={args.itemsSelected.length == 0}
           className='bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mr-2'
           >
             <i className='bi bi-download'></i>

@@ -27,12 +27,12 @@ function App()
   const [filesLoaded, setFilesLoaded] = useState(false);
 
   const [count, setCount] = useState(0);
-  const [itemsSelected, setItemsSelected] = useState(0);
+  // const itemsSelected = [];
+  const [itemsSelected, setItemsSelected] = useState([]);
 
   const authModalRef = useRef(null);
   const fileInputRef = useRef(null);
   const loadingBarRef = useRef(null);
-  const checkAllRef = useRef(null);
   const searchRef = useRef(null);
   const limitRef = useRef(null);
 
@@ -42,21 +42,17 @@ function App()
     socket.addEventListener('close', () => setTimeout(() => ConnectWebSocket(), 1000));
   }
 
-  function FetchFiles(limit) {
+  function FetchFiles() {
     const searchQuery = searchRef.current.value;
 
-    setItemsSelected(0);
+    // itemsSelected.length = 0;
+    setItemsSelected([]);
     setFilesLoaded(false);
-
-    document.querySelectorAll('input[type="checkbox"]')
-      .forEach(checkbox => checkbox.checked = false);
 
     fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${limitRef.current.value}`, {
       method: 'GET',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
     })
     .then(response => {
       if (response.status == 401) throw new Error();
@@ -78,13 +74,12 @@ function App()
   return (
     <div className='page overflow-hidden'>
       <AuthenticationModal ServerURL={ServerURL} authModalRef={authModalRef} FetchFiles={FetchFiles}/>
-      <FileModal ServerURL={ServerURL} showFileModal={showFileModal} setShowFileModal={setShowFileModal} />
+      <FileModal ServerURL={ServerURL} itemsSelected={itemsSelected} showFileModal={showFileModal} setShowFileModal={setShowFileModal} />
 
       <div className='w-full'>
         <TableFunctions
           count={count}
           limits={limits}
-
           ServerURL={ServerURL}
           loadingBarRef={loadingBarRef}
           fileInputRef={fileInputRef}
@@ -94,7 +89,6 @@ function App()
           FetchFiles={FetchFiles}
           setShowFileModal={setShowFileModal}
           setItemsSelected={setItemsSelected}
-          checkAllRef={checkAllRef}
           searchRef={searchRef}
           limitRef={limitRef}
         />
@@ -104,7 +98,6 @@ function App()
           ServerURL={ServerURL}
           loadingBarRef={loadingBarRef}
           fileInputRef={fileInputRef}
-          checkAllRef={checkAllRef}
           itemsSelected={itemsSelected}
           setItemsSelected={setItemsSelected}
         />
