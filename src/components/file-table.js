@@ -62,6 +62,14 @@ function FileTable(args)
     } else args.setItemsSelected([...args.itemsSelected, file]);
   }
 
+  function GetStructuredDate(date) {
+    const d = new Date(date), h = d.getHours() % 12 || 12, ampm = d.getHours() < 12 ? 'AM' : 'PM';
+    return (
+      `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}, ` +
+      `${h}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')} ${ampm}`
+    );
+  }
+
   return (
     <div>
       <table className='table-auto divide-y divide-gray-200'>
@@ -112,7 +120,7 @@ function FileTable(args)
                   : `${(file.size / 1073741824).toFixed(2)} GB`
                 }
               </td>
-              <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>{new Date(file.date).toLocaleString()}</td>
+              <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>{GetStructuredDate(file.date)}</td>
             </tr>
           )) : (
             <tr className='bg-gray-50'>

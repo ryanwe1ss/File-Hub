@@ -27,7 +27,6 @@ function App()
   const [filesLoaded, setFilesLoaded] = useState(false);
 
   const [count, setCount] = useState(0);
-  // const itemsSelected = [];
   const [itemsSelected, setItemsSelected] = useState([]);
 
   const authModalRef = useRef(null);
@@ -45,7 +44,7 @@ function App()
   function FetchFiles() {
     const searchQuery = searchRef.current.value;
 
-    // itemsSelected.length = 0;
+    document.querySelectorAll('tr').forEach(row => row.classList.remove('bg-blue-100'));
     setItemsSelected([]);
     setFilesLoaded(false);
 
@@ -58,10 +57,10 @@ function App()
       if (response.status == 401) throw new Error();
       return response.json();
     })
-    .then(result => {
-      setCount(result.count);
+    .then(data => {
       setAuthenticated(true);
-      setFiles(result.files);
+      setCount(data.count);
+      setFiles(data.files);
     })
     .catch(() => {
       setFiles([]);

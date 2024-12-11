@@ -45,6 +45,7 @@ function TableFunctions(args)
       }
     });
 
+    document.querySelectorAll('tr').forEach(row => row.classList.remove('bg-blue-100'));
     args.setItemsSelected([]);
   }
 
