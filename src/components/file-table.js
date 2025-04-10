@@ -81,7 +81,7 @@ function FileTable(args)
                   onClick={ClearSelectedFiles}
                   className='text-gray-500 hover:text-gray-700'
                 >
-                  <i className='bi bi-x-lg'></i>
+                  <i className='bi bi-x-lg text-red-500'></i>
                 </button>
               )}
             </th>

@@ -52,7 +52,7 @@ route.post('/api/authenticate', (request, result) => {
 });
 
 route.get('/api/file', middleware, (request, result) => {
-  const fileName = request.headers['file-name'];
+  const fileName = `${request.headers['file-name']}.${request.headers['file-extension']}`;
 
   fs.readFile(`files/${fileName}`, (error, data) => {
     if (error) return result.sendStatus(404);
@@ -83,6 +83,7 @@ route.get('/api/files', middleware, (request, result) => {
     files.forEach(fileName => {
       if (searchQuery && !fileName.toLowerCase().includes(searchQuery) || limit == fileId - 1) return;
 
+      const fileNameWithoutExtension = fileName.split('.').slice(0, -1).join('.');
       const extension = fileName.split('.').pop().toLowerCase();
       const size = fs.statSync(`files/${fileName}`).size;
       const date = fs.statSync(`files/${fileName}`).mtime;
@@ -94,7 +95,7 @@ route.get('/api/files', middleware, (request, result) => {
 
       localFiles.push({
         id: fileId,
-        name: fileName,
+        name: fileNameWithoutExtension,
         thumbnail: thumbnail,
         type: extension,
         size: size,
@@ -172,6 +173,31 @@ route.post('/api/upload', middleware, (request, result) => {
   });
 
   form.parse(request);
+});
+
+route.post('/api/rename', middleware, (request, result) => {
+  const currentName = request.body.current_name;
+  const newName = request.body.new_name;
+
+  const currentFilePath = `files/${currentName}`;
+  const newFilePath = `files/${newName}`;
+
+  const currentThumbnailPath = `thumbnails/${currentName}`;
+  const newThumbnailPath = `thumbnails/${newName}`;
+
+  if (fs.existsSync(currentFilePath)) {
+    fs.renameSync(currentFilePath, newFilePath);
+  }
+
+  if (fs.existsSync(currentThumbnailPath)) {
+    fs.renameSync(currentThumbnailPath, newThumbnailPath);
+  }
+
+  fileListener.synchronize();
+  result.send({
+    'status': 'success',
+    'message': 'File renamed successfully',
+  });
 });
 
 route.post('/api/save', middleware, (request, result) => {

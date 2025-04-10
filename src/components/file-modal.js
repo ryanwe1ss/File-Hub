@@ -3,18 +3,22 @@ import '../css/file-modal.scss';
 
 function FileModal(args)
 {
+  const [showEditFileName, setShowEditFileName] = useState(false);
   const [lastOpenedFile, setLastOpenedFile] = useState({});
   const [fileContent, setFileContent] = useState(null);
-  const [editText, setEditText] = useState(false);
+
   const [loaded, setLoaded] = useState(false);
+  const [width, setWidth] = useState(50);
+
+  const [newFileName, setNewFileName] = useState(null);
+  const [editText, setEditText] = useState(false);
   const [file, setFile] = useState({});
+
   const textFile = useRef(null);
 
   const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
   const imageTypes = ['jpg', 'jpeg', 'png', 'gif'];
   const audioTypes = ['mp3', 'wav', 'ogg'];
-  
-  let currentWidth = 100;
 
   useEffect(() => {
     if (!args.showFileModal) {
@@ -36,6 +40,7 @@ function FileModal(args)
       headers: {
         'Content-Type': 'application/json',
         'File-Name': openFile.name,
+        'File-Extension': openFile.type,
       },
     })
     .then(response => {
@@ -59,7 +64,36 @@ function FileModal(args)
 
   }, [args.showFileModal]);
 
-  function SaveFileChanges() {
+  function handleSaveFileName(event) {
+    switch (event.key)
+    {
+      case 'Enter':
+        setFile({ ...file, name: newFileName });
+        setShowEditFileName(false);
+        setNewFileName(null);
+
+        fetch(`${args.ServerURL}/api/rename`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            current_name: `${file.name}.${file.type}`,
+            new_name: `${newFileName}.${file.type}`,
+          }),
+        });
+        break;
+
+      case 'Escape':
+        setShowEditFileName(false);
+        break;
+
+      default:
+        setNewFileName(event.target.value);
+        break;
+    }
+  }
+
+  function handleSaveFileChanges() {
     const body = {
       name: file.name,
       content: textFile.current.value,
@@ -84,11 +118,11 @@ function FileModal(args)
   }
 
   function ExpandImageOrVideo(action) {
-    currentWidth = action 
-      ? (currentWidth + 10 > 100 ? 100 : currentWidth + 10)
-      : (currentWidth - 10 < 10 ? 10 : currentWidth - 10);
-
-    document.querySelector('img, video').style.width = `${currentWidth}%`;
+    setWidth(
+      action
+        ? (width + 10 > 100 ? 100 : width + 10)
+        : (width - 10 < 10 ? 10 : width - 10)
+    );
   }
 
   if (args.showFileModal) {
@@ -97,7 +131,27 @@ function FileModal(args)
         <div className='file-modal-content'>
           <header className='flex justify-between'>
             <div className='flex'>
-              <h4 className='font-bold'>{loaded ? file.name : 'Grabbing File...'}</h4>
+              {
+                !showEditFileName ? (
+                  <h4
+                    className='font-bold'
+                    onClick={() => {
+                      setShowEditFileName(true);
+                      setNewFileName(file.name);
+                    }}
+                  >
+                    {loaded ? file.name : 'Grabbing File...'}
+                  </h4>
+                ) : (
+                  <input
+                    onKeyUp={handleSaveFileName}
+                    className='border-2 border-black w-64 p-1 mb-2'
+                    defaultValue={newFileName}
+                    autoFocus={true}
+                    type='text'
+                  />
+                )
+              }
               {imageTypes.some(type => type == file.type) || videoTypes.some(type => type == file.type) ? (
                   <>
                     <button onClick={() => ExpandImageOrVideo(true)} className='text-green-500 mb-2 ml-3'><i className='bi bi-plus-circle'></i></button>
@@ -108,7 +162,7 @@ function FileModal(args)
                     <button onClick={() => setEditText(!editText)} className='text-blue-500 mb-2 ml-3'><i className='text-l bi bi-pencil'></i></button>
                   ) || (
                     <>
-                      <button onClick={() => SaveFileChanges()} className='text-green-500 mb-2 ml-3'><i className='text-l bi bi-save'></i></button>
+                      <button onClick={handleSaveFileChanges} className='text-green-500 mb-2 ml-3'><i className='text-l bi bi-save'></i></button>
                       <button onClick={() => setEditText(!editText)} className='text-red-500 mb-2 ml-3'><i className='text-l bi bi-x'></i></button>
                     </>
                   )
@@ -119,6 +173,7 @@ function FileModal(args)
 
             <button id='close' onClick={() => {
               args.setShowFileModal(false);
+              setShowEditFileName(false);
               setFileContent(null);
               setLoaded(false);
 
@@ -129,9 +184,9 @@ function FileModal(args)
           {loaded ? (
             <div className='file-modal-body'>
               {imageTypes.some(type => type == file.type)
-                ? <img src={URL.createObjectURL(fileContent)} alt={file.name} />
+                ? <img src={URL.createObjectURL(fileContent)} style={{ width: `${width}%` }} alt={file.name}/>
                 : videoTypes.some(type => type == file.type)
-                ? <video src={URL.createObjectURL(fileContent)} controls></video>
+                ? <video src={URL.createObjectURL(fileContent)} style={{ width: `${width}%` }} controls></video>
                 : audioTypes.some(type => type == file.type)
                 ? <audio src={URL.createObjectURL(fileContent)} controls></audio>
                 : <p className='whitespace-pre-line'>
