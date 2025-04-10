@@ -222,9 +222,11 @@ route.delete('/api/delete', middleware, (request, result) => {
   const files = request.body;
 
   files.forEach(file => {
-    fs.unlinkSync(`files/${file.name}`);
-    if (fs.existsSync(`thumbnails/${file.name}`)) {
-      fs.unlinkSync(`thumbnails/${file.name}`);
+    const fileName = `${file.name}.${file.type}`;
+
+    fs.unlinkSync(`files/${fileName}`);
+    if (fs.existsSync(`thumbnails/${fileName}`)) {
+      fs.unlinkSync(`thumbnails/${fileName}`);
     }
   });
 
