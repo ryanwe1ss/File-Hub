@@ -96,6 +96,7 @@ function FileModal(args)
   function handleSaveFileChanges() {
     const body = {
       name: file.name,
+      type: file.type,
       content: textFile.current.value,
     };
 

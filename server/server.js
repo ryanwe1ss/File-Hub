@@ -114,11 +114,11 @@ route.post('/api/download', middleware, (request, result) => {
   const zipFile = new zip();
 
   if (files.length == 1) {
-    result.download(`files/${files[0].name}`);
+    result.download(`files/${files[0].name}.${files[0].type}`);
   
   } else {
     files.forEach(file => {
-      zipFile.addLocalFile(`files/${file.name}`);
+      zipFile.addLocalFile(`files/${file.name}.${file.type}`);
     });
   
     zipFile.writeZip('files.zip');
@@ -203,14 +203,14 @@ route.post('/api/rename', middleware, (request, result) => {
 route.post('/api/save', middleware, (request, result) => {
   const body = request.body;
 
-  if (!fs.existsSync(`files/${body.name}`)) {
+  if (!fs.existsSync(`files/${body.name}.${body.type}`)) {
     return result.send({
       'status': 'error',
       'message': 'File does not exist',
     });
   }
 
-  fs.writeFile(`files/${body.name}`, body.content, (error) => {
+  fs.writeFile(`files/${body.name}.${body.type}`, body.content, (error) => {
     return result.send({
       'status': error ? 'error' : 'success',
       'message': error ? 'File could not be saved' : 'File saved successfully',
