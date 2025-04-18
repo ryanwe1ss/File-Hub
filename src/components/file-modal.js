@@ -4,7 +4,6 @@ import '../css/file-modal.scss';
 function FileModal(args)
 {
   const [showEditFileName, setShowEditFileName] = useState(false);
-  const [lastOpenedFile, setLastOpenedFile] = useState({});
   const [fileContent, setFileContent] = useState(null);
 
   const [loaded, setLoaded] = useState(false);
@@ -27,21 +26,16 @@ function FileModal(args)
     }
 
     const openFile = args.itemsSelected[0];
-    if (lastOpenedFile.name == openFile.name) {
-      setFileContent(lastOpenedFile.data);
-      setLoaded(true);
-      return;
-    }
-
     setFile(openFile);
+    
     fetch(`${args.ServerURL}/api/file`, {
-      method: 'GET',
+      method: 'POST',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'File-Name': openFile.name,
-        'File-Extension': openFile.type,
-      },
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        file_name: openFile.name,
+        file_extension: openFile.type,
+      }),
     })
     .then(response => {
       if (
@@ -55,11 +49,6 @@ function FileModal(args)
     .then(data => {
       setLoaded(true);
       setFileContent(data);
-      setLastOpenedFile({
-        cache_date: new Date().getTime(),
-        name: openFile.name,
-        data: data,
-      });
     });
 
   }, [args.showFileModal]);
@@ -110,11 +99,6 @@ function FileModal(args)
     .then(() => {
       setEditText(false);
       setFileContent(textFile.current.value);
-      setLastOpenedFile({
-        cache_date: new Date().getTime(),
-        name: file.name,
-        data: textFile.current.value,
-      });
     });
   }
 

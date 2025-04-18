@@ -15,6 +15,7 @@ const route = express();
 const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
 const imageTypes = ['jpg', 'jpeg', 'png', 'gif'];
 const audioTypes = ['mp3', 'wav', 'ogg'];
+const maxSessionAge = 1000 * 60 * 30; // 30 minutes
 
 route.use(range({ accept: 'bytes' }));
 route.use(express.json());
@@ -27,12 +28,12 @@ route.use(session({
   saveUninitialized: true,
   secret: 'token',
   cookie: {
-    maxAge: 3600000,
+    maxAge: maxSessionAge,
   },
 }));
 
 const middleware = (request, result, next) => {
-  if (!request.session.user) {
+  if (!request.session.authenticated) {
     return result.sendStatus(401);
   
   } next();
@@ -43,16 +44,17 @@ route.post('/api/authenticate', (request, result) => {
     return result.sendStatus(401);
   }
 
-  request.session.user = 'authenticated';
+  request.session.authenticated = true;
   request.session.save(_ => {
     result.send({
       'cookie': request.headers.cookie,
+      'age': maxSessionAge / 1000,
     });
   });
 });
 
-route.get('/api/file', middleware, (request, result) => {
-  const fileName = `${request.headers['file-name']}.${request.headers['file-extension']}`;
+route.post('/api/file', middleware, (request, result) => {
+  const fileName = `${request.body.file_name}.${request.body.file_extension}`;
 
   fs.readFile(`files/${fileName}`, (error, data) => {
     if (error) return result.sendStatus(404);
@@ -73,9 +75,9 @@ route.get('/api/file', middleware, (request, result) => {
   });
 });
 
-route.get('/api/files', middleware, (request, result) => {
-  const searchQuery = request.query.name.toLowerCase();
-  const limit = request.query.limit;
+route.post('/api/files', middleware, (request, result) => {
+  const searchQuery = request.body.name.toLowerCase();
+  const limit = request.body.limit;
   const localFiles = [];
   let fileId = 1;
 
@@ -134,10 +136,13 @@ route.post('/api/download', middleware, (request, result) => {
 
 route.post('/api/upload', middleware, (request, result) => {
   const files = [];
-  const form = new formidable.IncomingForm();
+  const form = new formidable.IncomingForm({
+    allowEmptyFiles: true,
+    minFileSize: 0,
+  });
 
   form.on('error', () => {
-    response.status(500);
+    result.sendStatus(500);
   });
 
   form.on('file', (field, file) => {
@@ -168,7 +173,7 @@ route.post('/api/upload', middleware, (request, result) => {
     });
     await Promise.all(thumbnailWriting);
 
-    fileListener.synchronize();
+    fileListener.synchronize_files();
     result.sendStatus(200);
   });
 
@@ -193,7 +198,7 @@ route.post('/api/rename', middleware, (request, result) => {
     fs.renameSync(currentThumbnailPath, newThumbnailPath);
   }
 
-  fileListener.synchronize();
+  fileListener.synchronize_files();
   result.send({
     'status': 'success',
     'message': 'File renamed successfully',
@@ -216,9 +221,11 @@ route.post('/api/save', middleware, (request, result) => {
       'message': error ? 'File could not be saved' : 'File saved successfully',
     });
   });
+
+  fileListener.synchronize_files();
 });
 
-route.delete('/api/delete', middleware, (request, result) => {
+route.post('/api/delete', middleware, (request, result) => {
   const files = request.body;
 
   files.forEach(file => {
@@ -230,7 +237,7 @@ route.delete('/api/delete', middleware, (request, result) => {
     }
   });
 
-  fileListener.synchronize();
+  fileListener.synchronize_files();
   result.sendStatus(200);
 });
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import '../css/auth-modal.scss';
 
 function AuthenticationModal(args)
@@ -33,17 +33,23 @@ function AuthenticationModal(args)
 
       if (response.status != 200) {
         args.authModalRef.current.querySelector('input').select();
-        return setAlert({ message: 'Incorrect Password', open: true });
+        return setAlert({ message: 'Incorrect Password. Try again.', open: true });
       }
 
       return response.json();
     })
-    .then(authorization => {
-      if (authorization) {
+    .then(data => {
+      if (data) {
+        setTimeout(() => window.location.reload(true), data.age * 1000);
         setAlert({ message: null, open: false });
+
         args.authModalRef.current.classList.add('hidden');
         args.FetchFiles();
       }
+    })
+    .catch(() => {
+      setRequest({ authenticating: false, password: null, message: 'Authenticate' });
+      setAlert({ message: 'Server Error. Contact Administrator.', open: true });
     });
   }
 
@@ -51,15 +57,19 @@ function AuthenticationModal(args)
     <div className='auth-modal hidden' ref={args.authModalRef}>
       <div className='auth-modal-content'>
         <header className='flex justify-between items-center'>
-          <h4 className='font-bold'>Authentication Required</h4>
+          <h4 className='font-bold underline'>Authentication Required</h4>
         </header>
-        <hr/>
 
-        <div className='bg-white shadow-md rounded px-8 pt-6 pb-8 mt-6'>
+        <div className='bg-white shadow-md rounded px-8 pt-6 pb-8 mt-3 border border-top-gray-200'>
           <div className='mb-6'>
             <label className='block text-gray-700 text-sm font-bold mb-2'>File Hub Password</label>
             <input
               onInput={(event) => setRequest({ ...request, password: event.target.value })}
+              onKeyUp={(event) => {
+                if (event.key === 'Enter') {
+                  PasswordAuthenticate();
+                }
+              }}
               className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
               placeholder='Password'
               type='password'

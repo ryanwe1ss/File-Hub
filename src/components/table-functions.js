@@ -32,11 +32,9 @@ function TableFunctions(args)
     if (args.itemsSelected.length == 0) return;
 
     fetch(`${args.ServerURL}/api/delete`, {
-      method: 'DELETE',
+      method: 'POST',
       credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(args.itemsSelected),
     })
     .then(response => {
@@ -76,6 +74,7 @@ function TableFunctions(args)
         }
       </div>
 
+      {args.userCount}
       <div className='flex ml-auto'>
         {!args.authenticated ?
           <button className='mr-3 ml-12'><i className='bi bi-lock-fill text-2xl text-red-500'></i></button> :

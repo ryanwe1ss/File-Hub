@@ -37,7 +37,7 @@ function App()
 
   function ConnectWebSocket() {
     const socket = new WebSocket(SocketURL);
-    socket.addEventListener('message', (event) => FetchFiles(event.data));
+    socket.addEventListener('message', () => FetchFiles());
     socket.addEventListener('close', () => setTimeout(() => ConnectWebSocket(), 1000));
   }
 
@@ -48,10 +48,14 @@ function App()
     setItemsSelected([]);
     setFilesLoaded(false);
 
-    fetch(`${ServerURL}/api/files?name=${searchQuery}&limit=${limitRef.current.value}`, {
-      method: 'GET',
+    fetch(`${ServerURL}/api/files`, {
+      method: 'POST',
       credentials: 'include',
       headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        'name': searchQuery,
+        'limit': limitRef.current.value,
+      }),
     })
     .then(response => {
       if (response.status == 401) throw new Error();
@@ -72,8 +76,18 @@ function App()
 
   return (
     <div className='page overflow-hidden'>
-      <AuthenticationModal ServerURL={ServerURL} authModalRef={authModalRef} FetchFiles={FetchFiles}/>
-      <FileModal ServerURL={ServerURL} itemsSelected={itemsSelected} showFileModal={showFileModal} setShowFileModal={setShowFileModal} />
+      <AuthenticationModal
+        ServerURL={ServerURL}
+        authModalRef={authModalRef}
+        FetchFiles={FetchFiles}
+      />
+
+      <FileModal
+        ServerURL={ServerURL}
+        itemsSelected={itemsSelected}
+        showFileModal={showFileModal}
+        setShowFileModal={setShowFileModal}
+      />
 
       <div className='w-full'>
         <TableFunctions
