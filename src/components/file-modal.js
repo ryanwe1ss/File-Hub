@@ -53,7 +53,7 @@ function FileModal(args)
 
   }, [args.showFileModal]);
 
-  function handleSaveFileName(event) {
+  const handleSaveFileName = (event) => {
     switch (event.key)
     {
       case 'Enter':
@@ -82,7 +82,7 @@ function FileModal(args)
     }
   }
 
-  function handleSaveFileChanges() {
+  const handleSaveFileChanges = () => {
     const body = {
       name: file.name,
       type: file.type,
@@ -102,7 +102,7 @@ function FileModal(args)
     });
   }
 
-  function ExpandImageOrVideo(action) {
+  const ExpandImageOrVideo = (action) => {
     setWidth(
       action
         ? (width + 10 > 100 ? 100 : width + 10)

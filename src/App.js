@@ -10,40 +10,48 @@ import AuthenticationModal from './components/auth-modal';
 import TableFunctions from './components/table-functions';
 import FileModal from './components/file-modal';
 import FileTable from './components/file-table';
+import ExportModal from './components/export-modal';
 
 function App()
 {
-  useEffect(() => {
-    ConnectWebSocket();
-    FetchFiles();
-  }, []);
-
-  const limits = [10, 20, 50, 100];
+  const limit = 12;
 
   const [authenticated, setAuthenticated] = useState(false);
   const [showFileModal, setShowFileModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const [files, setFiles] = useState([]);
   const [filesLoaded, setFilesLoaded] = useState(false);
+  const [lastFileName, setLastFileName] = useState(null);
 
   const [count, setCount] = useState(0);
+  const [totalSize, setTotalSize] = useState(0);
   const [itemsSelected, setItemsSelected] = useState([]);
 
   const authModalRef = useRef(null);
   const fileInputRef = useRef(null);
   const loadingBarRef = useRef(null);
-  const searchRef = useRef(null);
-  const limitRef = useRef(null);
 
-  function ConnectWebSocket() {
+  useEffect(() => {
+    ConnectWebSocket();
+    FetchFiles();
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = ([showFileModal, showExportModal].includes(true)
+      ? 'hidden'
+      : 'auto'
+    );
+
+  }, [showFileModal, showExportModal]);
+
+  const ConnectWebSocket = () => {
     const socket = new WebSocket(SocketURL);
-    socket.addEventListener('message', () => FetchFiles());
+    socket.addEventListener('message', () => FetchFiles(true));
     socket.addEventListener('close', () => setTimeout(() => ConnectWebSocket(), 1000));
   }
 
-  function FetchFiles() {
-    const searchQuery = searchRef.current.value;
-
+  const FetchFiles = (refresh=false) => {
     document.querySelectorAll('tr').forEach(row => row.classList.remove('bg-blue-100'));
     setItemsSelected([]);
     setFilesLoaded(false);
@@ -53,8 +61,8 @@ function App()
       credentials: 'include',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        'name': searchQuery,
-        'limit': limitRef.current.value,
+        'lastFileName': lastFileName,
+        'limit': limit,
       }),
     })
     .then(response => {
@@ -62,9 +70,29 @@ function App()
       return response.json();
     })
     .then(data => {
+      setLastFileName(data.files[data.files.length - 1]?.name || null);
       setAuthenticated(true);
+
+      setTotalSize(data.size_in_bytes);
       setCount(data.count);
-      setFiles(data.files);
+
+      switch (refresh)
+      {
+        case false:
+          setFiles(prevFiles => {
+            const newFiles = data.files.map(file => ({
+              ...file,
+            }));
+            return [...prevFiles, ...newFiles];
+          
+          }); break;
+
+        case true:
+          setFiles(data.files.map(file => ({
+            ...file,
+          
+          }))); break;
+      }
     })
     .catch(() => {
       setFiles([]);
@@ -89,10 +117,17 @@ function App()
         setShowFileModal={setShowFileModal}
       />
 
-      <div className='w-full'>
+      <ExportModal
+        fileCount={count}
+        totalSize={totalSize}
+
+        showExportModal={showExportModal}
+        setShowExportModal={setShowExportModal}
+      />
+
+      <div className={`w-full ${!authenticated ? 'hidden' : null}`}>
         <TableFunctions
           count={count}
-          limits={limits}
           ServerURL={ServerURL}
           loadingBarRef={loadingBarRef}
           fileInputRef={fileInputRef}
@@ -100,15 +135,20 @@ function App()
           itemsSelected={itemsSelected}
           authenticated={authenticated}
           FetchFiles={FetchFiles}
+          showFileModal={showFileModal}
+          showExportModal={showExportModal}
+          setShowExportModal={setShowExportModal}
           setShowFileModal={setShowFileModal}
           setItemsSelected={setItemsSelected}
-          searchRef={searchRef}
-          limitRef={limitRef}
         />
 
         <FileTable
           files={files}
+          count={count}
           ServerURL={ServerURL}
+          FetchFiles={FetchFiles}
+          showFileModal={showFileModal}
+          showExportModal={showExportModal}
           loadingBarRef={loadingBarRef}
           fileInputRef={fileInputRef}
           itemsSelected={itemsSelected}

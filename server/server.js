@@ -76,18 +76,30 @@ route.post('/api/file', middleware, (request, result) => {
 });
 
 route.post('/api/files', middleware, (request, result) => {
-  const searchQuery = request.body.name.toLowerCase();
   const limit = request.body.limit;
-  const localFiles = [];
-  let fileId = 1;
+  let lastFileName = request.body.lastFileName;
 
-  fs.readdir('files', (error, files) => {
+  let localFiles = [];
+  let totalSize = 0;
+  let fileId = 0;
+
+  fs.readdir('files', (_, files) => {
     files.forEach(fileName => {
-      if (searchQuery && !fileName.toLowerCase().includes(searchQuery) || limit == fileId - 1) return;
-
       const fileNameWithoutExtension = fileName.split('.').slice(0, -1).join('.');
-      const extension = fileName.split('.').pop().toLowerCase();
       const size = fs.statSync(`files/${fileName}`).size;
+
+      totalSize += size;
+      if (limit == fileId) return;
+
+      if (lastFileName && lastFileName != fileNameWithoutExtension) return;
+        else {
+          if (lastFileName) {
+            lastFileName = null;
+            return;
+          }
+        }
+
+      const extension = fileName.split('.').pop().toLowerCase();
       const date = fs.statSync(`files/${fileName}`).mtime;
       let thumbnail = null;
 
@@ -107,7 +119,12 @@ route.post('/api/files', middleware, (request, result) => {
       fileId++;
     });
 
-    result.send({ files: localFiles, count: files.length });
+    localFiles.sort((a, b) => a.name.localeCompare(b.name));
+    result.send({
+      files: localFiles,
+      count: files.length,
+      size_in_bytes: totalSize,
+    });
   });
 });
 
@@ -231,7 +248,10 @@ route.post('/api/delete', middleware, (request, result) => {
   files.forEach(file => {
     const fileName = `${file.name}.${file.type}`;
 
-    fs.unlinkSync(`files/${fileName}`);
+    if (fs.existsSync(`files/${fileName}`)) {
+      fs.unlinkSync(`files/${fileName}`);
+    }
+
     if (fs.existsSync(`thumbnails/${fileName}`)) {
       fs.unlinkSync(`thumbnails/${fileName}`);
     }
@@ -242,5 +262,5 @@ route.post('/api/delete', middleware, (request, result) => {
 });
 
 route.listen(process.env.SERVER_PORT, () => {
-  console.log(`Server Listening on Port ${process.env.SERVER_PORT}`);
+  console.log(`API Listening on Port ${process.env.SERVER_PORT}`);
 });

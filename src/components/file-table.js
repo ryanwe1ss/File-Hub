@@ -1,30 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function FileTable(args)
 {
-  const [isDragging, setIsDragging] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+        if (args.count > args.files.length) {
+          args.FetchFiles();
+        }
+      }
+    };
+  
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
 
-  const handleDragOver = (event) => {
-    event.preventDefault();
-    setIsDragging(true);
-  };
+  }, [args.count, args.files]);
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-    setIsDragging(false);
-    UploadFiles(event);
-  };
-
-  function UploadFiles(event) {
+  const UploadFiles = (event) => {
     const form = new FormData();
     const request = new XMLHttpRequest();
     const files = event.type == 'drop' ? event.dataTransfer.files : event.target.files;
 
     for (let file = 0; file < files.length; file++) {
+      if (files[file].name.length > 100) {
+        alert('File name is too long. Maximum file name length is 100 characters.');
+        return;
+      }
+
       if (files[file].size > 100000000) {
         alert('File size is too large. Maximum file size is 100MB.');
         return;
@@ -48,21 +50,21 @@ function FileTable(args)
     args.fileInputRef.current.value = null;
   }
 
-  function ClearSelectedFiles() {
-    document.querySelectorAll('tr').forEach(row => row.classList.remove('bg-blue-100'));
-    args.setItemsSelected([]);
-  }
+  const SelectFile = (event, f) => {
+    const file = {
+      id: f.id,
+      name: f.name,
+      type: f.type,
+    };
 
-  function SelectFile(event, file) {
     event.target.parentElement.classList.toggle('bg-blue-100');
-
     if (args.itemsSelected.includes(file)) {
       args.setItemsSelected(args.itemsSelected.filter(item => item != file));
     
     } else args.setItemsSelected([...args.itemsSelected, file]);
   }
 
-  function GetStructuredDate(date) {
+  const GetStructuredDate = (date) => {
     const d = new Date(date), h = d.getHours() % 12 || 12, ampm = d.getHours() < 12 ? 'AM' : 'PM';
     return (
       `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}, ` +
@@ -71,34 +73,20 @@ function FileTable(args)
   }
 
   return (
-    <div>
+    <div className='mb-16 mt-20 overflow-hidden'>
       <table className='table-auto divide-y divide-gray-200'>
         <thead>
           <tr>
-            <th className='px-6 py-3 text-left text-xs font-medium text-gray-500'>
-              {args.itemsSelected.length > 0 && (
-                <button
-                  onClick={ClearSelectedFiles}
-                  className='text-gray-500 hover:text-gray-700'
-                >
-                  <i className='bi bi-x-lg text-red-500'></i>
-                </button>
-              )}
-            </th>
+            <th></th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Name</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Type</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Size</th>
             <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase'>Created</th>
           </tr>
         </thead>
-        <tbody
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={isDragging ? 'zoneborder' : 'no-zoneborder'}
-        >
-          {args.files.length > 0 ? args.files.map(file => (
-            <tr className='hover:cursor-pointer' key={file.id} onClick={(event) => SelectFile(event, file)}>
+        <tbody className='no-zoneborder'>
+          {args.files.length > 0 ? args.files.map((file, index) => (
+            <tr className='hover:cursor-pointer' key={index} onClick={(event) => SelectFile(event, file)}>
               <td className='px-6 py-3 whitespace-nowrap text-sm text-gray-500 pointer-events-none'>
                 {file.thumbnail ? <img src={file.thumbnail} alt={file.name} className='w-8 h-8 rounded-md'/>
                   : file.type == 'txt' ? <i className='bi bi-file-text text-2xl'></i>

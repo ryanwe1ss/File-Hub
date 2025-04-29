@@ -14,7 +14,7 @@ function AuthenticationModal(args)
     open: false,
   });
 
-  function PasswordAuthenticate() {
+  const PasswordAuthenticate = () => {
     setRequest({ ...request, authenticating: true, message: 'Authenticating...' });
     setAlert({ message: null, open: false });
 
@@ -44,7 +44,7 @@ function AuthenticationModal(args)
         setAlert({ message: null, open: false });
 
         args.authModalRef.current.classList.add('hidden');
-        args.FetchFiles();
+        args.FetchFiles(true);
       }
     })
     .catch(() => {
@@ -65,11 +65,6 @@ function AuthenticationModal(args)
             <label className='block text-gray-700 text-sm font-bold mb-2'>File Hub Password</label>
             <input
               onInput={(event) => setRequest({ ...request, password: event.target.value })}
-              onKeyUp={(event) => {
-                if (event.key === 'Enter') {
-                  PasswordAuthenticate();
-                }
-              }}
               className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
               placeholder='Password'
               type='password'
