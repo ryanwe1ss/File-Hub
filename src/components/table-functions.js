@@ -53,7 +53,7 @@ function TableFunctions(args)
   return (
     <div className='fixed top-0 left-0 right-0 z-1 bg-white shadow-md p-3 pb-1'>
       <div className='mb-4 flex'>
-        <div className='flex mr-auto' style={{marginRight: '30px'}}>
+        <div className='flex mr-auto' style={{ marginRight: '30px' }}>
           <button
             className='bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mt-2'
             onClick={() => args.setShowExportModal(true)}

@@ -1,7 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import FailedToUploadModal from '../components/modals/failed-upload-modal';
 
 function FileTable(args)
 {
+  const [failed, setFailed] = useState({
+    open: false,
+    files: [],
+  });
+
   useEffect(() => {
     const handleScroll = () => {
       if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
@@ -17,21 +23,15 @@ function FileTable(args)
   }, [args.count, args.files]);
 
   const UploadFiles = (event) => {
-    const form = new FormData();
     const request = new XMLHttpRequest();
-    const files = event.type == 'drop' ? event.dataTransfer.files : event.target.files;
+    const form = new FormData();
+
+    const files = event.target.files;
+    let totalSize = 0;
 
     for (let file = 0; file < files.length; file++) {
-      if (files[file].name.length > 100) {
-        alert('File name is too long. Maximum file name length is 100 characters.');
-        return;
-      }
-
-      if (files[file].size > 100000000) {
-        alert('File size is too large. Maximum file size is 100MB.');
-        return;
-      
-      } form.append('files', files[file]);
+      form.append('files', files[file]);
+      totalSize += Math.round(files[file].size / 1048576 * 100) / 100;
     }
 
     request.open('POST', `${args.ServerURL}/api/upload`);
@@ -41,6 +41,21 @@ function FileTable(args)
       const percent = Math.round((event.loaded / event.total) * 100);
       args.loadingBarRef.current.style.width = `${percent}%`;
     });
+
+    request.onload = () => {
+      const response = JSON.parse(request.responseText);
+
+      if (!response.success) {
+        alert(response.message);
+      }
+
+      if (response.not_uploaded?.length > 0) {
+        setFailed({
+          files: response.not_uploaded,
+          open: true,
+        });
+      }
+    };
 
     request.addEventListener('load', () => {
       args.loadingBarRef.current.style.width = '0%';
@@ -58,8 +73,8 @@ function FileTable(args)
     };
 
     event.target.parentElement.classList.toggle('bg-blue-100');
-    if (args.itemsSelected.includes(file)) {
-      args.setItemsSelected(args.itemsSelected.filter(item => item != file));
+    if (args.itemsSelected.find(item => item.name == file.name)) {
+      args.setItemsSelected(args.itemsSelected.filter(item => item.name != file.name));
     
     } else args.setItemsSelected([...args.itemsSelected, file]);
   }
@@ -125,6 +140,8 @@ function FileTable(args)
         className='hidden'
         multiple={true}
       />
+
+      <FailedToUploadModal failed={failed} setFailed={setFailed} />
     </div>
   );
 }

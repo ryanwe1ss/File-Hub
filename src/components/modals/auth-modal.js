@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import '../css/auth-modal.scss';
+import '../../css/auth-modal.scss';
 
 function AuthenticationModal(args)
 {

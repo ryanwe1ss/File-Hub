@@ -15,7 +15,11 @@ const route = express();
 const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
 const imageTypes = ['jpg', 'jpeg', 'png', 'gif'];
 const audioTypes = ['mp3', 'wav', 'ogg'];
+
 const maxSessionAge = 1000 * 60 * 30; // 30 minutes
+const maxUploadSize = 1024 * 1024 * 1024; // 1 GB
+const maxSingleFileSize = 1024 * 1024 * 50; // 50 MB
+const maxFileNameLength = 100; // 100 characters
 
 route.use(range({ accept: 'bytes' }));
 route.use(express.json());
@@ -152,21 +156,56 @@ route.post('/api/download', middleware, (request, result) => {
 });
 
 route.post('/api/upload', middleware, (request, result) => {
-  const files = [];
   const form = new formidable.IncomingForm({
+    maxFileSize: maxUploadSize,
     allowEmptyFiles: true,
     minFileSize: 0,
   });
 
-  form.on('error', () => {
-    result.sendStatus(500);
-  });
+  const safeSend = (statusObj) => {
+    if (!responded) {
+      responded = true;
+      result.status(400).send(statusObj);
+    }
+  };
+
+  let responded = false;
+  let files = [];
 
   form.on('file', (field, file) => {
     files.push([field, file]);
   });
   
   form.on('end', async () => {
+    if (responded) return;
+
+    const fileIssuesMap = new Map();
+    files.forEach(file => {
+      const originalName = file[1].originalFilename;
+      const size = file[1].size;
+      const reasons = [];
+
+      if (originalName.length > maxFileNameLength) {
+        reasons.push(`Name is too long. Maximum: ${maxFileNameLength} characters`);
+      }
+
+      if (size > maxSingleFileSize) {
+        reasons.push(`File size exceeded. Maximum: ${maxSingleFileSize / 1024 / 1024} MB`);
+      }
+
+      if (reasons.length > 0) {
+        if (!fileIssuesMap.has(originalName)) {
+          fileIssuesMap.set(originalName, { name: originalName, size, reasons });
+        } else {
+          fileIssuesMap.get(originalName).reasons.push(...reasons);
+        }
+      }
+    });
+
+    const notUploaded = Array.from(fileIssuesMap.values());
+    const invalidNames = new Set(notUploaded.map(f => f.name));
+    files = files.filter(file => !invalidNames.has(file[1].originalFilename));
+
     // wait for all file writing tasks to complete
     const fileWriting = files.map((file) => {
       return new Promise((resolve) => {
@@ -191,10 +230,47 @@ route.post('/api/upload', middleware, (request, result) => {
     await Promise.all(thumbnailWriting);
 
     fileListener.synchronize_files();
-    result.sendStatus(200);
+    result.send({
+      success: true,
+      not_uploaded: notUploaded,
+      message: 'File upload successful',
+    });
   });
 
-  form.parse(request);
+  form.parse(request, (error) => {
+    if (error) {
+      if (error.code == 1009) {
+        return safeSend({
+          success: false,
+          message: `File size exceeded. Please upload files of a combined size less than ${maxUploadSize / 1024 / 1024} MB`,
+        });
+      }
+
+      return safeSend({
+        success: false,
+        message: 'File upload failed. Please try again.',
+      });
+    }
+  });
+});
+
+route.post('/api/export', middleware, (request, result) => {
+  fs.readdir('files', (_, files) => {
+    const zipFile = new zip();
+
+    files.forEach(fileName => {
+      zipFile.addLocalFile(`files/${fileName}`);
+    });
+
+    zipFile.writeZip('files.zip');
+    result.download('files.zip');
+
+    setTimeout(() => {
+      if (fs.existsSync('files.zip')) {
+        fs.unlinkSync('files.zip');
+      }
+    }, 1000);
+  });
 });
 
 route.post('/api/rename', middleware, (request, result) => {

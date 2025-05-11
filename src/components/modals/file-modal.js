@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import '../css/file-modal.scss';
+import '../../css/file-modal.scss';
 
 function FileModal(args)
 {
@@ -22,6 +22,7 @@ function FileModal(args)
   useEffect(() => {
     if (!args.showFileModal) {
       setEditText(false);
+      setWidth(50);
       return;
     }
 

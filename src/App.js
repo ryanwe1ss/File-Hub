@@ -6,11 +6,11 @@ const SocketURL = `${process.env.PROTOCOL == 'https' ? 'wss' : 'ws'}://${window.
 import { useEffect, useState, useRef } from 'react';
 
 // Load Components
-import AuthenticationModal from './components/auth-modal';
+import AuthenticationModal from './components/modals/auth-modal';
 import TableFunctions from './components/table-functions';
-import FileModal from './components/file-modal';
+import FileModal from './components/modals/file-modal';
 import FileTable from './components/file-table';
-import ExportModal from './components/export-modal';
+import ExportModal from './components/modals/export-modal';
 
 function App()
 {
@@ -120,6 +120,7 @@ function App()
       <ExportModal
         fileCount={count}
         totalSize={totalSize}
+        ServerURL={ServerURL}
 
         showExportModal={showExportModal}
         setShowExportModal={setShowExportModal}
