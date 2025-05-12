@@ -90,12 +90,6 @@ function TableFunctions(args)
           </div>
 
           <button
-            className='bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded mr-2'
-          >
-            <i className='bi bi-pencil-square'></i>
-          </button>
-
-          <button
             onClick={() => args.setShowFileModal(true)}
             disabled={args.itemsSelected.length != 1}
             className='bg-orange-500 hover:bg-orange-700 text-white py-2 px-4 rounded mr-2'

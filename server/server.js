@@ -88,6 +88,7 @@ route.post('/api/files', middleware, (request, result) => {
   let fileId = 0;
 
   fs.readdir('files', (_, files) => {
+    files.sort((a, b) => a.localeCompare(b));
     files.forEach(fileName => {
       const fileNameWithoutExtension = fileName.split('.').slice(0, -1).join('.');
       const size = fs.statSync(`files/${fileName}`).size;
@@ -123,7 +124,6 @@ route.post('/api/files', middleware, (request, result) => {
       fileId++;
     });
 
-    localFiles.sort((a, b) => a.name.localeCompare(b.name));
     result.send({
       files: localFiles,
       count: files.length,
