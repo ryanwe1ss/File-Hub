@@ -1,5 +1,6 @@
 require('dotenv').config({ path: '../.env' });
 const fileListener = require('./file-listener');
+const pgClient = require('./node_modules/pg');
 
 const formidable = require('formidable');
 const range = require('express-range');
@@ -46,6 +47,34 @@ const middleware = (request, result, next) => {
 route.post('/api/authenticate', (request, result) => {
   if (Buffer.from(request.body.authorization, 'base64').toString('ascii') != process.env.PASSWORD) {
     return result.sendStatus(401);
+  }
+
+  const user_data = request.body.user_data;
+  if (user_data) {
+    const database = new pgClient.Client(
+      `postgres://${process.env.DB_USER}:` +
+      `${process.env.DB_PASSWORD}@` +
+      `${process.env.DB_SERVER}:${process.env.DB_PORT}/` +
+      `${process.env.DB_NAME}`
+    );
+
+    database.connect();
+    database.query(`
+      INSERT INTO filehub_logins
+      (user_agent, ip_address, country, region, city, postal_code, date_created)
+      VALUES
+      ($1, $2, $3, $4, $5, $6, $7)
+
+    `, [
+      user_data.user_agent,
+      user_data.ip_address,
+      user_data.country,
+      user_data.region,
+      user_data.city,
+      user_data.postal_code,
+      new Date(),
+    
+    ], () => database.end());
   }
 
   request.session.authenticated = true;

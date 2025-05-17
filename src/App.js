@@ -14,7 +14,7 @@ import ExportModal from './components/modals/export-modal';
 
 function App()
 {
-  const limit = 12;
+  const limit = 100;
 
   const [authenticated, setAuthenticated] = useState(false);
   const [showFileModal, setShowFileModal] = useState(false);

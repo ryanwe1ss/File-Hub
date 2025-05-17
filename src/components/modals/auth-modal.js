@@ -14,7 +14,33 @@ function AuthenticationModal(args)
     open: false,
   });
 
-  const PasswordAuthenticate = () => {
+  const PasswordAuthenticate = async () => {
+    let body = {
+      'authorization': btoa(request.password),
+      'user_data': null,
+    };
+
+    if (process.env.TRACK_LOGIN == 'true') {
+      try {
+        const response = await fetch('https://ipapi.co/json');
+    
+        if (response.ok) {
+          const data = await response.json();
+          body.user_data = {
+            user_agent: navigator.userAgent,
+            ip_address: data.ip,
+            country: data.country_name,
+            postal_code: data.postal,
+            region: data.region,
+            city: data.city,
+          };
+        }
+  
+      } catch (error) {
+        // do nothing, skip...
+      }
+    }
+
     setRequest({ ...request, authenticating: true, message: 'Authenticating...' });
     setAlert({ message: null, open: false });
 
@@ -24,9 +50,7 @@ function AuthenticationModal(args)
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        'authorization': btoa(request.password),
-      }),
+      body: JSON.stringify(body),
     })
     .then(response => {
       setRequest({ authenticating: false, password: null, message: 'Authenticate' });
