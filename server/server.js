@@ -4,8 +4,11 @@ const pgClient = require('./node_modules/pg');
 
 const formidable = require('formidable');
 const range = require('express-range');
+const archiver = require('archiver');
+const fsp = require('fs').promises;
 const express = require('express');
 const sharp = require('sharp');
+const path = require('path');
 const cors = require('cors');
 const zip = require('adm-zip');
 const fs = require('fs');
@@ -283,22 +286,53 @@ route.post('/api/upload', middleware, (request, result) => {
   });
 });
 
-route.post('/api/export', middleware, (request, result) => {
-  fs.readdir('files', (_, files) => {
-    const zipFile = new zip();
+route.post('/api/export', middleware, (req, res) => {
+  const archive = archiver('zip', { zlib: { level: 9 } });
 
-    files.forEach(fileName => {
-      zipFile.addLocalFile(`files/${fileName}`);
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename="export.zip"');
+  // Do NOT set Content-Length
+
+  archive.pipe(res);
+
+  const directoryPath = path.join(__dirname, 'files');
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      return res.status(500).send('Error reading files');
+    }
+
+    files.forEach(file => {
+      const filePath = path.join(directoryPath, file);
+      archive.file(filePath, { name: file });
     });
 
-    zipFile.writeZip('files.zip');
-    result.download('files.zip');
+    archive.finalize();
+  });
+});
 
-    setTimeout(() => {
-      if (fs.existsSync('files.zip')) {
-        fs.unlinkSync('files.zip');
-      }
-    }, 1000);
+route.get('/api/export-direct', middleware, (req, res) => {
+  const archiver = require('archiver');
+  const fs = require('fs');
+  const path = require('path');
+
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', 'attachment; filename="export.zip"');
+
+  archive.pipe(res);
+
+  const directoryPath = path.join(__dirname, 'files');
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      return res.status(500).send('Error reading files');
+    }
+
+    files.forEach(file => {
+      archive.file(path.join(directoryPath, file), { name: file });
+    });
+
+    archive.finalize();
   });
 });
 
@@ -364,6 +398,45 @@ route.post('/api/delete', middleware, (request, result) => {
 
   fileListener.synchronize_files();
   result.sendStatus(200);
+});
+
+route.post('/api/delete-all', middleware, async (request, result) => {
+  const fileFolder = 'files';
+  const thumbnailFolder = 'thumbnails';
+
+  try {
+    const files = await fsp.readdir(fileFolder);
+    const thumbnails = await fsp.readdir(thumbnailFolder);
+
+    for (const file of files) {
+      const filePath = path.join(fileFolder, file);
+      const stat = await fsp.stat(filePath);
+
+      if (stat.isFile()) {
+        await fsp.unlink(filePath);
+      }
+    }
+
+    for (const thumbnail of thumbnails) {
+      const thumbPath = path.join(thumbnailFolder, thumbnail);
+      const stat = await fsp.stat(thumbPath);
+
+      if (stat.isFile()) {
+        await fsp.unlink(thumbPath);
+      }
+    }
+
+    result.send({
+      message: 'All files and thumbnails deleted successfully',
+      success: true,
+    });
+
+  } catch (error) {
+    result.send({
+      message: 'Error deleting files/thumbnails. Refresh the page and try again.',
+      success: false,
+    });
+  }
 });
 
 route.listen(process.env.SERVER_PORT, () => {

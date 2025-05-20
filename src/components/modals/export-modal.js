@@ -5,30 +5,87 @@ function ExportModal(args)
 {
   const loadingBarRef = useRef(null);
 
-  const handleExport = () => {
-    const request = new XMLHttpRequest();
+  const handleExport = async () => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const serverUrl = args.ServerURL;
 
-    request.open('POST', `${args.ServerURL}/api/export`);
-    request.setRequestHeader('Content-Type', 'application/json');
-    request.withCredentials = true;
-    request.responseType = 'blob';
+    loadingBarRef.current.style.width = '0%';
 
-    request.addEventListener('progress', (event) => {
-      const percent = Math.round((event.loaded / event.total) * 100);
-      loadingBarRef.current.style.width = `${percent}%`;
-    });
-    
-    request.addEventListener('load', () => {
-      const instance = document.createElement('a');
+    if (isMobile) {
+      let percent = 0;
+      const interval = setInterval(() => {
+        percent += Math.random() * 7 + 3; // smooth random increment
+        if (percent >= 95) {
+          clearInterval(interval);
+        } else {
+          loadingBarRef.current.style.width = `${percent}%`;
+        }
+      }, 200);
 
-      instance.href = window.URL.createObjectURL(request.response);
-      instance.download = 'export.zip';
-      instance.click();
+      // Trigger native browser download
+      window.location.href = `${args.ServerURL}/api/export-direct`;
 
-      loadingBarRef.current.style.width = '0%';
-    });
+      // After some delay, complete progress bar
+      setTimeout(() => {
+        clearInterval(interval);
+        loadingBarRef.current.style.width = '100%';
+        setTimeout(() => {
+          loadingBarRef.current.style.width = '0%';
+        }, 1000);
+      }, 15000); // adjust based on expected file size & speed
+    }
 
-    request.send();
+    else {
+      const response = await fetch(`${serverUrl}/api/export`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      if (!response.ok || !response.body) {
+        alert('Failed to download the file.');
+        return;
+      }
+      
+      const reader = response.body.getReader();
+      const chunks = [];
+      let loaded = 0;
+      
+      const contentLengthHeader = response.headers.get('Content-Length');
+      const total = contentLengthHeader ? parseInt(contentLengthHeader, 10) : null;
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+      
+        chunks.push(value);
+        loaded += value.length;
+      
+        if (total) {
+          const percent = Math.round((loaded / total) * 100);
+          loadingBarRef.current.style.width = `${percent}%`;
+        } else {
+          // If total size unknown, maybe show indeterminate progress or partial progress
+          // For example: increase progress slowly up to 90% max
+          const percent = Math.min(loaded / (1024 * 1024) / 10, 90); // arbitrary slow grow
+          loadingBarRef.current.style.width = `${percent}%`;
+        }
+      }
+      
+      loadingBarRef.current.style.width = '100%';
+      setTimeout(() => {
+        loadingBarRef.current.style.width = '0%';
+      }, 1000);
+      
+      const blob = new Blob(chunks, { type: 'application/zip' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'export.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }
   };
 
   if (args.showExportModal) {

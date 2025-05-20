@@ -1,5 +1,10 @@
+import { useEffect, useState } from 'react';
+import DeleteModal from '../components/modals/delete-modal'; 
+
 function TableFunctions(args)
 {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const DownloadFiles = () => {
     const request = new XMLHttpRequest();
 
@@ -57,6 +62,7 @@ function TableFunctions(args)
           <button
             className='bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded mt-2'
             onClick={() => args.setShowExportModal(true)}
+            disabled={args.fileCount == 0}
           >
             <i className='bi bi-card-list'></i>
             <span className='ml-2'>Export All</span>
@@ -113,14 +119,26 @@ function TableFunctions(args)
           </button>
 
           <button
-            onClick={DeleteFiles}
-            disabled={args.itemsSelected == 0}
             className='bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded mr-3'
-            >
-              <i className='bi bi-trash'></i>
+            disabled={args.fileCount == 0}
+            onClick={() => {
+              if (args.itemsSelected.length > 0) DeleteFiles();
+              else if (args.fileCount > 0 && args.itemsSelected.length == 0) setShowDeleteModal(true);
+            }}
+          >
+            <i className='bi bi-trash'></i>
           </button>
         </div>
       </div>
+
+      <DeleteModal
+        ServerURL={args.ServerURL}
+        open={setShowDeleteModal}
+        show={showDeleteModal}
+        FetchFiles={args.FetchFiles}
+        fileCount={args.fileCount}
+        totalSize={args.totalSize}
+      />
     </div>
   );
 }

@@ -128,7 +128,8 @@ function App()
 
       <div className={`w-full ${!authenticated ? 'hidden' : null}`}>
         <TableFunctions
-          count={count}
+          fileCount={count}
+          totalSize={totalSize}
           ServerURL={ServerURL}
           loadingBarRef={loadingBarRef}
           fileInputRef={fileInputRef}
