@@ -26,7 +26,6 @@ function DeleteModal(args)
       switch (response.success)
       {
         case true:
-          args.FetchFiles(true);
           args.open(false);
           break;
 

@@ -1,91 +1,104 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import '../../css/export-modal.scss';
 
 function ExportModal(args)
 {
+  // maximum mobile file size for fancy downloading - measured in megabytes
+  const maxMobileDownloadSize = 200;
+
   const loadingBarRef = useRef(null);
+  const [action, setAction] = useState({
+    disabled: false,
+    text: 'Export',
+  });
 
   const handleExport = async () => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const serverUrl = args.ServerURL;
 
     loadingBarRef.current.style.width = '0%';
+    setAction({
+      ...action,
+      disabled: true,
+    });
 
     if (isMobile) {
-      let percent = 0;
-      const interval = setInterval(() => {
-        percent += Math.random() * 7 + 3; // smooth random increment
-        if (percent >= 95) {
-          clearInterval(interval);
-        } else {
-          loadingBarRef.current.style.width = `${percent}%`;
-        }
-      }, 200);
+      if (args.totalSize > (maxMobileDownloadSize * 1024 * 1024)) {
+        window.location.href = `${args.ServerURL}/api/export-direct`;
+        args.setShowExportModal(false);
 
-      // Trigger native browser download
-      window.location.href = `${args.ServerURL}/api/export-direct`;
-
-      // After some delay, complete progress bar
-      setTimeout(() => {
-        clearInterval(interval);
-        loadingBarRef.current.style.width = '100%';
         setTimeout(() => {
-          loadingBarRef.current.style.width = '0%';
-        }, 1000);
-      }, 15000); // adjust based on expected file size & speed
+          alert(`Total download size is over 200MB (Currently: ${(args.totalSize / (1024 * 1024)).toFixed(2) + 'MB'}). Running in the background.`);
+          setAction({
+            ...action,
+            disabled: false,
+          });
+
+        }, 1500); return;
+      }
     }
 
-    else {
-      const response = await fetch(`${serverUrl}/api/export`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      
-      if (!response.ok || !response.body) {
-        alert('Failed to download the file.');
-        return;
-      }
-      
-      const reader = response.body.getReader();
-      const chunks = [];
-      let loaded = 0;
-      
-      const contentLengthHeader = response.headers.get('Content-Length');
-      const total = contentLengthHeader ? parseInt(contentLengthHeader, 10) : null;
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-      
-        chunks.push(value);
-        loaded += value.length;
-      
-        if (total) {
-          const percent = Math.round((loaded / total) * 100);
-          loadingBarRef.current.style.width = `${percent}%`;
-        } else {
-          // If total size unknown, maybe show indeterminate progress or partial progress
-          // For example: increase progress slowly up to 90% max
-          const percent = Math.min(loaded / (1024 * 1024) / 10, 90); // arbitrary slow grow
-          loadingBarRef.current.style.width = `${percent}%`;
-        }
-      }
-      
-      loadingBarRef.current.style.width = '100%';
-      setTimeout(() => {
-        loadingBarRef.current.style.width = '0%';
-      }, 1000);
-      
-      const blob = new Blob(chunks, { type: 'application/zip' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'export.zip';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+    const response = await fetch(`${serverUrl}/api/export`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    
+    if (!response.ok || !response.body) {
+      alert('Failed to receive. Refresh your page and try again.');
+      return;
     }
+    
+    const totalSize = response.headers.get('X-Total-Size');
+    const reader = response.body.getReader();
+    const chunks = [];
+    let loaded = 0;
+    
+    while (true) {
+      let done, value;
+
+      try {
+        ({ done, value } = await Promise.race([
+          reader.read(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Server failed receiving anymore data. Refresh your page and try again.')), 5000)
+          )
+        ]));
+      
+      } catch (error) {
+        return alert(error.message);
+      }
+
+      if (done) break;
+
+      chunks.push(value);
+      loaded += value.length;
+    
+      if (totalSize) {
+        const percent = Math.min((loaded / totalSize) * 100, 100);
+        loadingBarRef.current.style.width = `${percent}%`;
+      }
+    }
+    
+    loadingBarRef.current.style.width = '100%';
+    setTimeout(() => {
+      loadingBarRef.current.style.width = '0%';
+      
+    }, 1000);
+    
+    const blob = new Blob(chunks, { type: 'application/zip' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'export.zip';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    setAction({
+      ...action,
+      disabled: false,
+    });
   };
 
   if (args.showExportModal) {
@@ -95,14 +108,17 @@ function ExportModal(args)
           <header className='flex justify-between'>
             <h2 className='font-bold'>Export All Files</h2>
 
-            <button id='close' onClick={() => {
-              args.setShowExportModal(false);
-
-            }}>&times;</button>
+            <button
+              className='mt-[-10px] text-black float-right text-2xl font-bold hover:text-red-500 hover:cursor-pointer'
+              onClick={() => args.setShowExportModal(false)}
+              disabled={action.disabled}
+            >
+              &times;
+            </button>
           </header>
           <hr/><br/>
 
-          <div className='export-modal-body'>
+          <div className='break-all'>
             <table className='table-auto divide-y divide-gray-200'>
               <thead>
                 <tr>
@@ -125,9 +141,10 @@ function ExportModal(args)
             <div className='flex items-center gap-4 w-full mt-4'>
               <button
                 className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
+                disabled={action.disabled}
                 onClick={handleExport}
               >
-                Export
+                {action.text}
                 <i className='bi bi-download ml-2'></i>
               </button>
 

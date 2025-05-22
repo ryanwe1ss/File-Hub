@@ -130,9 +130,13 @@ function FileModal(args)
                   </h4>
                 ) : (
                   <input
+                    value={newFileName || ''}
+                    onChange={(event) => {
+                      const sanitized = event.target.value.replace(/[\\/:*?"<>|]/g, '');
+                      setNewFileName(sanitized);
+                    }}
                     onKeyUp={handleSaveFileName}
                     className='border-2 border-black w-64 p-1 mb-2'
-                    defaultValue={newFileName}
                     autoFocus={true}
                     type='text'
                   />

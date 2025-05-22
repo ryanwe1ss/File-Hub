@@ -40,9 +40,10 @@ function TableFunctions(args)
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(args.itemsSelected),
     })
+    .then(response => response.json())
     .then(response => {
-      if (response.status != 200) {
-        alert(`Problem Deleting File(s) - Error: [${response.status}]`);
+      if (!response.success) {
+        alert('Failed to delete file(s). Refresh the page and try again');
       }
     });
 

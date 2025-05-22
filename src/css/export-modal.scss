@@ -10,19 +10,6 @@
   left: 0;
   top: 0;
 
-  #close {
-    margin-top: -10px;
-    color: black;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-  }
-  
-  #close:hover {
-    color: red;
-    cursor: pointer;
-  }
-
   .export-modal-content {
     display: flex;
     flex-direction: column;
@@ -35,9 +22,5 @@
     padding: 20px;
     height: 30%;
     width: 60%;
-
-    .export-modal-body {
-      word-break: break-all;
-    }
   }
 }

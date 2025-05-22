@@ -25,9 +25,9 @@ const maxUploadSize = 1024 * 1024 * 1024; // 1 GB
 const maxSingleFileSize = 1024 * 1024 * 50; // 50 MB
 const maxFileNameLength = 100; // 100 characters
 
-route.use(range({ accept: 'bytes' }));
 route.use(express.json());
 route.use(cors({
+  exposedHeaders: ['X-Total-Size'],
   origin: process.env.ORIGIN,
   credentials: true,
 }));
@@ -42,14 +42,14 @@ route.use(session({
 
 const middleware = (request, result, next) => {
   if (!request.session.authenticated) {
-    return result.sendStatus(401);
+    return result.send({ message: 'Authentication Failed', success: false });
   
   } next();
 };
 
 route.post('/api/authenticate', (request, result) => {
   if (Buffer.from(request.body.authorization, 'base64').toString('ascii') != process.env.PASSWORD) {
-    return result.sendStatus(401);
+    return result.send({ message: 'Incorrect Password. Try again.', success: false });
   }
 
   const user_data = request.body.user_data;
@@ -83,8 +83,9 @@ route.post('/api/authenticate', (request, result) => {
   request.session.authenticated = true;
   request.session.save(_ => {
     result.send({
-      'cookie': request.headers.cookie,
-      'age': maxSessionAge / 1000,
+      cookie: request.headers.cookie,
+      age: maxSessionAge / 1000,
+      success: true,
     });
   });
 });
@@ -93,7 +94,7 @@ route.post('/api/file', middleware, (request, result) => {
   const fileName = `${request.body.file_name}.${request.body.file_extension}`;
 
   fs.readFile(`files/${fileName}`, (error, data) => {
-    if (error) return result.sendStatus(404);
+    if (error) return result.send({ message: 'Failed retrieving file. Refresh your page and try again', success: false });
     if (
       imageTypes.some(type => type == fileName.split('.').pop().toLowerCase()) ||
       audioTypes.some(type => type == fileName.split('.').pop().toLowerCase()) ||
@@ -286,54 +287,73 @@ route.post('/api/upload', middleware, (request, result) => {
   });
 });
 
-route.post('/api/export', middleware, (req, res) => {
-  const archive = archiver('zip', { zlib: { level: 9 } });
-
-  res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', 'attachment; filename="export.zip"');
-  // Do NOT set Content-Length
-
-  archive.pipe(res);
-
+route.post('/api/export', middleware, (request, result) => {
   const directoryPath = path.join(__dirname, 'files');
-  fs.readdir(directoryPath, (err, files) => {
-    if (err) {
-      return res.status(500).send('Error reading files');
+  const files = fs.readdirSync(directoryPath);
+  let totalSize = 0;
+
+  files.forEach(file => {
+    const filePath = path.join(directoryPath, file);
+    try {
+      const stats = fs.statSync(filePath);
+      if (stats.isFile()) {
+        totalSize += stats.size;
+      }
+    } catch {
+      // if file is missing or unreadable, skip it
     }
-
-    files.forEach(file => {
-      const filePath = path.join(directoryPath, file);
-      archive.file(filePath, { name: file });
-    });
-
-    archive.finalize();
   });
+
+  result.setHeader('Content-Type', 'application/zip');
+  result.setHeader('Content-Disposition', 'attachment; filename="export.zip"');
+  result.setHeader('X-Total-Size', totalSize);
+
+  const archive = archiver('zip', { zlib: { level: 9 } });
+  archive.on('error', () => {
+    // file fails to read due to being missing or locked
+  });
+
+  archive.pipe(result);
+  files.forEach(file => {
+    const filePath = path.join(directoryPath, file);
+    try {
+      archive.file(filePath, { name: file });
+    } catch {
+      // skip file if it can't be added (missing or locked)
+    }
+  });
+
+  archive.finalize();
 });
 
-route.get('/api/export-direct', middleware, (req, res) => {
-  const archiver = require('archiver');
-  const fs = require('fs');
-  const path = require('path');
+// PRIMARILY USED FOR MOBILE DEVICES
+// QUICK AND EASY DOWNLOAD WITHOUT EFFECTS
+route.get('/api/export-direct', middleware, (request, result) => {
+  const directoryPath = path.join(__dirname, 'files');
+  const files = fs.readdirSync(directoryPath);
+  let totalSize = 0;
+
+  files.forEach(file => {
+    const filePath = path.join(directoryPath, file);
+    const stats = fs.statSync(filePath);
+
+    if (stats.isFile()) {
+      totalSize += stats.size;
+    }
+  });
+
+  result.setHeader('Content-Type', 'application/zip');
+  result.setHeader('Content-Disposition', 'attachment; filename="export.zip"');
 
   const archive = archiver('zip', { zlib: { level: 9 } });
+  archive.pipe(result);
 
-  res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', 'attachment; filename="export.zip"');
-
-  archive.pipe(res);
-
-  const directoryPath = path.join(__dirname, 'files');
-  fs.readdir(directoryPath, (err, files) => {
-    if (err) {
-      return res.status(500).send('Error reading files');
-    }
-
-    files.forEach(file => {
-      archive.file(path.join(directoryPath, file), { name: file });
-    });
-
-    archive.finalize();
+  files.forEach(file => {
+    const filePath = path.join(directoryPath, file);
+    archive.file(filePath, { name: file });
   });
+
+  archive.finalize();
 });
 
 route.post('/api/rename', middleware, (request, result) => {
@@ -397,7 +417,10 @@ route.post('/api/delete', middleware, (request, result) => {
   });
 
   fileListener.synchronize_files();
-  result.sendStatus(200);
+  result.send({
+    message: 'Deleted File',
+    success: true,
+  });
 });
 
 route.post('/api/delete-all', middleware, async (request, result) => {
@@ -410,28 +433,38 @@ route.post('/api/delete-all', middleware, async (request, result) => {
 
     for (const file of files) {
       const filePath = path.join(fileFolder, file);
-      const stat = await fsp.stat(filePath);
 
-      if (stat.isFile()) {
-        await fsp.unlink(filePath);
+      try {
+        const stat = await fsp.stat(filePath);
+        if (stat.isFile()) {
+          await fsp.unlink(filePath);
+        }
+
+      } catch (_) {
+        // silently skip
       }
     }
 
     for (const thumbnail of thumbnails) {
       const thumbPath = path.join(thumbnailFolder, thumbnail);
-      const stat = await fsp.stat(thumbPath);
 
-      if (stat.isFile()) {
-        await fsp.unlink(thumbPath);
+      try {
+        const stat = await fsp.stat(thumbPath);
+        if (stat.isFile()) {
+          await fsp.unlink(thumbPath);
+        }
+      } catch (_) {
+        // silently skip
       }
     }
 
+    fileListener.synchronize_files();
     result.send({
       message: 'All files and thumbnails deleted successfully',
       success: true,
     });
 
-  } catch (error) {
+  } catch (_) {
     result.send({
       message: 'Error deleting files/thumbnails. Refresh the page and try again.',
       success: false,

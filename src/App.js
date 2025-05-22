@@ -59,16 +59,15 @@ function App()
     fetch(`${ServerURL}/api/files`, {
       method: 'POST',
       credentials: 'include',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         'lastFileName': lastFileName,
         'limit': limit,
       }),
     })
-    .then(response => {
-      if (response.status == 401) throw new Error();
-      return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
       setLastFileName(data.files[data.files.length - 1]?.name || null);
       setAuthenticated(true);

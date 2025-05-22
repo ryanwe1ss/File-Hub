@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import '../../css/auth-modal.scss';
 
 function AuthenticationModal(args)
@@ -52,24 +52,20 @@ function AuthenticationModal(args)
       },
       body: JSON.stringify(body),
     })
-    .then(response => {
+    .then(response => response.json())
+    .then(data => {
       setRequest({ authenticating: false, password: null, message: 'Authenticate' });
 
-      if (response.status != 200) {
+      if (!data.success) {
         args.authModalRef.current.querySelector('input').select();
-        return setAlert({ message: 'Incorrect Password. Try again.', open: true });
+        return setAlert({ message: data.message, open: true });
       }
 
-      return response.json();
-    })
-    .then(data => {
-      if (data) {
-        setTimeout(() => window.location.reload(true), data.age * 1000);
-        setAlert({ message: null, open: false });
+      setTimeout(() => window.location.reload(true), data.age * 1000);
+      setAlert({ message: null, open: false });
 
-        args.authModalRef.current.classList.add('hidden');
-        args.FetchFiles(true);
-      }
+      args.authModalRef.current.classList.add('hidden');
+      args.FetchFiles(true);
     })
     .catch(() => {
       setRequest({ authenticating: false, password: null, message: 'Authenticate' });
