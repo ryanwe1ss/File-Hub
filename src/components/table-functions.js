@@ -22,7 +22,10 @@ function TableFunctions(args)
       const instance = document.createElement('a');
 
       instance.href = window.URL.createObjectURL(request.response);
-      instance.download = args.itemsSelected.length == 1 ? args.itemsSelected[0].name : 'files.zip';
+      instance.download = args.itemsSelected.length == 1
+        ? `${args.itemsSelected[0].name}.${args.itemsSelected[0].type}`
+        : 'files.zip';
+
       instance.click();
 
       args.loadingBarRef.current.style.width = '0%';

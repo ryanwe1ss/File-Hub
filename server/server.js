@@ -238,6 +238,22 @@ route.post('/api/upload', middleware, (request, result) => {
     const notUploaded = Array.from(fileIssuesMap.values());
     const invalidNames = new Set(notUploaded.map(f => f.name));
     files = files.filter(file => !invalidNames.has(file[1].originalFilename));
+    
+    files = files.map(file => {
+      const originalFilename = file[1].originalFilename;
+      const lastDotIndex = originalFilename.lastIndexOf('.');
+      const extension = originalFilename.slice(lastDotIndex + 1).toLowerCase();
+      const nameWithoutExt = originalFilename.slice(0, lastDotIndex);
+      const newFilename = nameWithoutExt + '.' + extension;
+      return [
+        file[0],
+        {
+          ...file[1],
+          originalFilename: newFilename,
+          filepath: file[1].filepath.replace(file[1].originalFilename, newFilename)
+        }
+      ];
+    });
 
     // wait for all file writing tasks to complete
     const fileWriting = files.map((file) => {
