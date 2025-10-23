@@ -1,0 +1,27 @@
+.timeout-modal {
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.4);
+  
+  position: fixed;
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+  z-index: 999;
+  left: 0;
+  top: 0;
+
+  .timeout-modal-content {
+    display: flex;
+    flex-direction: column;
+    border-radius: 5px;
+    white-space: normal;
+
+    background-color: #FEFEFE;
+    border: 1px solid #888;
+    margin: 5% auto;
+    overflow: none;
+    padding: 20px;
+    height: 28%;
+    width: 60%;
+  }
+}

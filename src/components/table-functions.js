@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import DeleteModal from '../components/modals/delete-modal'; 
 
-function TableFunctions(args)
+export default function TableFunctions(args)
 {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -78,7 +78,7 @@ function TableFunctions(args)
               onClick={ClearSelectedFiles}
             >
               <i className='bi bi-x-lg'></i>
-              <span className='ml-2'>Unselect Files ({args.itemsSelected.length})</span>
+              <span className='ml-2'>Unselect ({args.itemsSelected.length})</span>
             </button>
           )}
 
@@ -146,4 +146,3 @@ function TableFunctions(args)
     </div>
   );
 }
-export default TableFunctions;

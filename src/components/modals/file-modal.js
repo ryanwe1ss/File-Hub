@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import '../../css/file-modal.scss';
 
-function FileModal(args)
+export default function FileModal(args)
 {
   const [showEditFileName, setShowEditFileName] = useState(false);
   const [fileContent, setFileContent] = useState(null);
@@ -197,4 +197,3 @@ function FileModal(args)
     );
   }
 }
-export default FileModal;

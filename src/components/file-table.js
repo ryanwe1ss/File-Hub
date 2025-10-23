@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import FailedToUploadModal from '../components/modals/failed-upload-modal';
 
-function FileTable(args)
+export default function FileTable(args)
 {
   const [failed, setFailed] = useState({
     open: false,
@@ -145,4 +145,3 @@ function FileTable(args)
     </div>
   );
 }
-export default FileTable;

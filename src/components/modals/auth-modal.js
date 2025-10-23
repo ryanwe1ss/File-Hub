@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import '../../css/auth-modal.scss';
 
-function AuthenticationModal(args)
+export default function AuthenticationModal(args)
 {
   const [request, setRequest] = useState({
     message: 'Authenticate',
@@ -61,7 +61,7 @@ function AuthenticationModal(args)
         return setAlert({ message: data.message, open: true });
       }
 
-      setTimeout(() => window.location.reload(true), data.age * 1000);
+      sessionStorage.setItem('session_timeout', (Date.now() + data.age * 1000));
       setAlert({ message: null, open: false });
 
       args.authModalRef.current.classList.add('hidden');
@@ -109,4 +109,3 @@ function AuthenticationModal(args)
     </div>
   );
 }
-export default AuthenticationModal;

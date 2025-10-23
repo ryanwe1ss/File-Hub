@@ -7,18 +7,24 @@ import { useEffect, useState, useRef } from 'react';
 
 // Load Components
 import AuthenticationModal from './components/modals/auth-modal';
+import SessionTimeoutModal from './components/modals/timeout-modal';
 import TableFunctions from './components/table-functions';
 import FileModal from './components/modals/file-modal';
 import FileTable from './components/file-table';
 import ExportModal from './components/modals/export-modal';
 
-function App()
+export default function App()
 {
   const limit = 100;
 
   const [authenticated, setAuthenticated] = useState(false);
   const [showFileModal, setShowFileModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+
+  // Session Timeout States
+  const [showTimeoutModal, setShowTimeoutModal] = useState(false);
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(0);
+  const isSessionModalSetAsClosed = useRef(false);
 
   const [files, setFiles] = useState([]);
   const [filesLoaded, setFilesLoaded] = useState(false);
@@ -44,6 +50,31 @@ function App()
     );
 
   }, [showFileModal, showExportModal]);
+
+  useEffect(() => {
+    setInterval(() => {
+      const sessionTimeout = sessionStorage.getItem('session_timeout');
+
+      if (sessionTimeout) {
+        const timeLeft = Number(sessionTimeout) - Date.now();
+
+        if (timeLeft <= 60000 && timeLeft > 0) {
+
+          if (!isSessionModalSetAsClosed.current && !showTimeoutModal) {
+            setShowTimeoutModal(true);
+          
+          } setSessionTimeLeft(timeLeft);
+        }
+
+        if (timeLeft <= 0) {
+          sessionStorage.removeItem('session_timeout');
+          window.location.reload(true);
+        }
+      }
+
+    }, 1000);
+
+  }, []);
 
   const ConnectWebSocket = () => {
     const socket = new WebSocket(SocketURL);
@@ -96,6 +127,7 @@ function App()
     .catch(() => {
       setFiles([]);
       setAuthenticated(false);
+      sessionStorage.removeItem('session_timeout');
       authModalRef.current.classList.remove('hidden');
     })
     .finally(() => setFilesLoaded(true));
@@ -107,6 +139,15 @@ function App()
         ServerURL={ServerURL}
         authModalRef={authModalRef}
         FetchFiles={FetchFiles}
+      />
+
+      <SessionTimeoutModal
+        ServerURL={ServerURL}
+        modalClose={isSessionModalSetAsClosed}
+        show={showTimeoutModal}
+        setTimeLeft={setSessionTimeLeft}
+        close={setShowTimeoutModal}
+        timeLeft={sessionTimeLeft}
       />
 
       <FileModal
@@ -159,4 +200,3 @@ function App()
     </div>
   );
 }
-export default App;

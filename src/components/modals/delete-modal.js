@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import '../../css/delete-modal.scss';
 
-function DeleteModal(args)
+export default function DeleteFilesModal(args)
 {
   const [loading, setLoading] = useState({
     text: 'Delete All',
@@ -92,4 +92,3 @@ function DeleteModal(args)
     );
   }
 }
-export default DeleteModal;

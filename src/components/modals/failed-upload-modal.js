@@ -1,6 +1,6 @@
 import '../../css/failed-upload-modal.scss';
 
-function FailedToUploadModal(args)
+export default function FailedToUploadModal(args)
 {
   if (args.failed.open) {
     return (
@@ -42,4 +42,3 @@ function FailedToUploadModal(args)
     );
   }
 }
-export default FailedToUploadModal;

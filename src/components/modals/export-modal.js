@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import '../../css/export-modal.scss';
 
-function ExportModal(args)
+export default function ExportModal(args)
 {
   // maximum mobile file size for fancy downloading - measured in megabytes
   const maxMobileDownloadSize = 200;
@@ -158,4 +158,3 @@ function ExportModal(args)
     );
   }
 }
-export default ExportModal;

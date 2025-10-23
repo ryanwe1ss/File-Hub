@@ -3,7 +3,7 @@ const fileListener = require('./file-listener');
 const pgClient = require('./node_modules/pg');
 
 const formidable = require('formidable');
-const range = require('express-range');
+const crypto = require('crypto');
 const archiver = require('archiver');
 const fsp = require('fs').promises;
 const express = require('express');
@@ -20,7 +20,7 @@ const videoTypes = ['mp4', 'avi', 'mov', 'wmv', 'mkv'];
 const imageTypes = ['jpg', 'jpeg', 'png', 'gif'];
 const audioTypes = ['mp3', 'wav', 'ogg'];
 
-const maxSessionAge = 1000 * 60 * 30; // 30 minutes
+const maxSessionAge = Number(process.env.SESSION_MINUTES) * 60 * 1000;
 const maxUploadSize = 1024 * 1024 * 1024; // 1 GB
 const maxSingleFileSize = 1024 * 1024 * 50; // 50 MB
 const maxFileNameLength = 100; // 100 characters
@@ -34,7 +34,7 @@ route.use(cors({
 route.use(session({
   resave: true,
   saveUninitialized: true,
-  secret: 'token',
+  secret: crypto.randomBytes(32).toString('hex'),
   cookie: {
     maxAge: maxSessionAge,
   },
@@ -85,6 +85,18 @@ route.post('/api/authenticate', (request, result) => {
     result.send({
       cookie: request.headers.cookie,
       age: maxSessionAge / 1000,
+      success: true,
+    });
+  });
+});
+
+route.post('/api/renew-session', middleware, (request, result) => {
+  request.session._garbage = Date();
+  request.session.touch();
+  request.session.save(_ => {
+    result.send({
+      time_left: maxSessionAge,
+      message: 'Session Renewed',
       success: true,
     });
   });
@@ -237,9 +249,10 @@ route.post('/api/upload', middleware, (request, result) => {
 
     const notUploaded = Array.from(fileIssuesMap.values());
     const invalidNames = new Set(notUploaded.map(f => f.name));
+
     files = files.filter(file => !invalidNames.has(file[1].originalFilename));
-    
     files = files.map(file => {
+
       const originalFilename = file[1].originalFilename;
       const lastDotIndex = originalFilename.lastIndexOf('.');
       const extension = originalFilename.slice(lastDotIndex + 1).toLowerCase();
