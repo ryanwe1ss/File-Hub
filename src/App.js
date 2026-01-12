@@ -58,7 +58,7 @@ export default function App()
       if (sessionTimeout) {
         const timeLeft = Number(sessionTimeout) - Date.now();
 
-        if (timeLeft <= 60000 && timeLeft > 0) {
+        if (timeLeft <= 300000 && timeLeft > 0) {
 
           if (!isSessionModalSetAsClosed.current && !showTimeoutModal) {
             setShowTimeoutModal(true);
@@ -171,6 +171,7 @@ export default function App()
           fileCount={count}
           totalSize={totalSize}
           ServerURL={ServerURL}
+          timeLeft={sessionTimeLeft}
           loadingBarRef={loadingBarRef}
           fileInputRef={fileInputRef}
           filesLoaded={filesLoaded}
@@ -182,6 +183,7 @@ export default function App()
           setShowExportModal={setShowExportModal}
           setShowFileModal={setShowFileModal}
           setItemsSelected={setItemsSelected}
+          setShowTimeoutModal={setShowTimeoutModal}
         />
 
         <FileTable

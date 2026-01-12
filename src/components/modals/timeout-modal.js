@@ -12,6 +12,7 @@ export default function SessionTimeoutModal(args)
     .then((data) => {
       if (data.success) {
         sessionStorage.setItem('session_timeout', Date.now() + data.time_left);
+        args.setTimeLeft(0);
         args.close(false);
       }
     });
@@ -40,13 +41,16 @@ export default function SessionTimeoutModal(args)
 
           {args.timeLeft &&
             <div>
-              <p>Your session is about to expire in <strong>{Math.ceil(args.timeLeft / 1000)} seconds</strong>.</p>
+              <p>Your session is about to expire in&nbsp;
+                <strong>
+                  {Math.ceil(args.timeLeft / 60000)} {Math.ceil(args.timeLeft / 60000) === 1 ? 'minute' : 'minutes'}
+                </strong>.</p>
               <hr/><br/>
               <p>Please click "Renew Session" to continue your work without losing any unsaved changes.</p>
             </div>
           }
 
-          <div className='flex justify-start mt-4'>
+          <div className='flex justify-start mt-2'>
             <button
               className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
               onClick={handleRenewSession}

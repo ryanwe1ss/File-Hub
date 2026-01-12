@@ -9,8 +9,11 @@ React.JS and TailwindCSS. Backend in Node.JS
 # Requirements
 - NPM
 - Node.JS
-- Web Hosting Software (nginx, xampp) for client
+- Nginx Web Server
 - Enable Read & Write Permissions for Server folder: sudo chmod -R 777 /var/www/html/
+
+# Optional
+- PostgreSQL database for keeping records of logins
 
 # Server Usage
 - Run node server.js located in /server/

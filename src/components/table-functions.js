@@ -90,9 +90,16 @@ export default function TableFunctions(args)
         </div>
 
         <div className='flex ml-auto mt-2'>
+          {args.timeLeft ? (
+            <div className='text-red-500 font-bold mt-2' onClick={() => args.setShowTimeoutModal(true)} style={{ cursor: 'pointer' }}>
+              {Math.floor((args.timeLeft + 999) / 60000)} : {Math.floor(((args.timeLeft + 999) % 60000) / 1000).toString().padStart(2, '0')}
+            </div>
+
+          ) : null}
+
           {!args.authenticated ?
-            <button className='mr-3 ml-12'><i className='bi bi-lock-fill text-2xl text-red-500'></i></button> :
-            <button className='mr-3 ml-12'><i className='bi bi-unlock-fill text-2xl text-green-500'></i></button>
+            <button className='mr-3 ml-4'><i className='bi bi-lock-fill text-2xl text-red-500'></i></button> :
+            <button className='mr-3 ml-4 cursor-default'><i className='bi bi-unlock-fill text-2xl text-green-500'></i></button>
           }
 
           <div className='download-bar mt-auto mr-3'>
